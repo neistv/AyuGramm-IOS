@@ -1,57 +1,34 @@
 diff --git a/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift b/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift
-index 17f21b6..b541cf9 100644
+index 17f21b6..ce40005 100644
 --- a/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift
 +++ b/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift
-@@ -4,6 +4,7 @@ import SwiftSignalKit
- import Display
- import AsyncDisplayKit
- import TelegramCore
-+import Postbox
- import SafariServices
- import MobileCoreServices
- import Intents
-@@ -129,6 +130,35 @@ import ComponentFlow
- import ComponentDisplayAdapters
- import UIKitRuntimeUtils
- 
-+private func ayuAutoReplyQuote(for message: Message, appConfig: AppConfiguration) -> EngineMessageReplyQuote? {
-+    let nsText = message.text as NSString
-+    guard nsText.length > 0 else {
-+        return nil
-+    }
-+    let maxLength = quoteMaxLength(appConfig: appConfig)
-+    let range = NSRange(location: 0, length: min(nsText.length, maxLength))
-+    let text = nsText.substring(with: range)
-+    var replyMedia: Media?
-+    for media in message.media {
-+        switch media {
-+        case _ as TelegramMediaImage, _ as TelegramMediaFile:
-+            replyMedia = media
-+        default:
-+            break
-+        }
-+    }
-+    return EngineMessageReplyQuote(
-+        text: text,
-+        offset: nil,
-+        entities: messageTextEntitiesInRange(
-+            entities: message.textEntitiesAttribute?.entities ?? [],
-+            range: range,
-+            onlyQuoteable: true
-+        ),
-+        media: replyMedia
-+    )
-+}
-+
- extension ChatControllerImpl {
-     func reloadChatLocation(chatLocation: ChatLocation, chatLocationContextHolder: Atomic<ChatLocationContextHolder?>, historyNode: ChatHistoryListNodeImpl, apply: @escaping ((ContainedViewLayoutTransition?) -> Void) -> Void) {
-         self.contentDataReady.set(false)
-@@ -1610,7 +1640,7 @@ extension ChatControllerImpl {
+@@ -1607,10 +1607,28 @@ extension ChatControllerImpl {
+                 if canSendMessagesHere {
+                     let _ = strongSelf.presentVoiceMessageDiscardAlert(action: {
+                         if let message = strongSelf.chatDisplayNode.historyNode.messageInCurrentHistoryView(messageId)?._asMessage() {
++                            let quote = { () -> EngineMessageReplyQuote? in
++                                let nsText = message.text as NSString
++                                guard nsText.length > 0 else {
++                                    return nil
++                                }
++                                let maxLength = quoteMaxLength(appConfig: strongSelf.context.currentAppConfiguration.with({ $0 }))
++                                let range = NSRange(location: 0, length: min(nsText.length, maxLength))
++                                return EngineMessageReplyQuote(
++                                    text: nsText.substring(with: range),
++                                    offset: nil,
++                                    entities: messageTextEntitiesInRange(
++                                        entities: message.textEntitiesAttribute?.entities ?? [],
++                                        range: range,
++                                        onlyQuoteable: true
++                                    ),
++                                    media: message.media.first(where: { $0 is TelegramMediaImage || $0 is TelegramMediaFile })
++                                )
++                            }()
                              strongSelf.updateChatPresentationInterfaceState(animated: true, interactive: true, { $0.updatedInterfaceState({
                                  $0.withUpdatedReplyMessageSubject(ChatInterfaceState.ReplyMessageSubject(
                                      messageId: message.id,
 -                                    quote: nil,
-+                                    quote: ayuAutoReplyQuote(for: message, appConfig: strongSelf.context.currentAppConfiguration.with({ $0 })),
++                                    quote: quote,
                                      innerSubject: innerSubject
                                  ))
                              }).updatedReplyMessage(message).updatedSearch(nil).updatedShowCommands(false) }, completion: { t in
