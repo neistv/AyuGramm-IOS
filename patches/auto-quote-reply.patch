@@ -1,5 +1,5 @@
 diff --git a/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift b/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift
-index 17f21b6..4744e90 100644
+index 17f21b6..b541cf9 100644
 --- a/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift
 +++ b/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift
 @@ -4,6 +4,7 @@ import SwiftSignalKit
@@ -10,15 +10,18 @@ index 17f21b6..4744e90 100644
  import SafariServices
  import MobileCoreServices
  import Intents
-@@ -129,6 +130,32 @@ import ComponentFlow
+@@ -129,6 +130,35 @@ import ComponentFlow
  import ComponentDisplayAdapters
  import UIKitRuntimeUtils
  
-+private func ayuAutoReplyQuote(for message: Message) -> EngineMessageReplyQuote? {
++private func ayuAutoReplyQuote(for message: Message, appConfig: AppConfiguration) -> EngineMessageReplyQuote? {
 +    let nsText = message.text as NSString
 +    guard nsText.length > 0 else {
 +        return nil
 +    }
++    let maxLength = quoteMaxLength(appConfig: appConfig)
++    let range = NSRange(location: 0, length: min(nsText.length, maxLength))
++    let text = nsText.substring(with: range)
 +    var replyMedia: Media?
 +    for media in message.media {
 +        switch media {
@@ -29,11 +32,11 @@ index 17f21b6..4744e90 100644
 +        }
 +    }
 +    return EngineMessageReplyQuote(
-+        text: message.text,
++        text: text,
 +        offset: nil,
 +        entities: messageTextEntitiesInRange(
 +            entities: message.textEntitiesAttribute?.entities ?? [],
-+            range: NSRange(location: 0, length: nsText.length),
++            range: range,
 +            onlyQuoteable: true
 +        ),
 +        media: replyMedia
@@ -43,12 +46,12 @@ index 17f21b6..4744e90 100644
  extension ChatControllerImpl {
      func reloadChatLocation(chatLocation: ChatLocation, chatLocationContextHolder: Atomic<ChatLocationContextHolder?>, historyNode: ChatHistoryListNodeImpl, apply: @escaping ((ContainedViewLayoutTransition?) -> Void) -> Void) {
          self.contentDataReady.set(false)
-@@ -1610,7 +1637,7 @@ extension ChatControllerImpl {
+@@ -1610,7 +1640,7 @@ extension ChatControllerImpl {
                              strongSelf.updateChatPresentationInterfaceState(animated: true, interactive: true, { $0.updatedInterfaceState({
                                  $0.withUpdatedReplyMessageSubject(ChatInterfaceState.ReplyMessageSubject(
                                      messageId: message.id,
 -                                    quote: nil,
-+                                    quote: ayuAutoReplyQuote(for: message),
++                                    quote: ayuAutoReplyQuote(for: message, appConfig: strongSelf.context.currentAppConfiguration.with({ $0 })),
                                      innerSubject: innerSubject
                                  ))
                              }).updatedReplyMessage(message).updatedSearch(nil).updatedShowCommands(false) }, completion: { t in
