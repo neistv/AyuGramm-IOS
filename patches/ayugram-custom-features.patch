@@ -1,0 +1,331 @@
+diff --git a/submodules/Display/Source/DeviceMetrics.swift b/submodules/Display/Source/DeviceMetrics.swift
+index 7fa38a6..c2604c5 100644
+--- a/submodules/Display/Source/DeviceMetrics.swift
++++ b/submodules/Display/Source/DeviceMetrics.swift
+@@ -561,7 +561,7 @@ public enum DeviceMetrics: CaseIterable, Equatable {
+         case .iPhoneX, .iPhone12Mini, .iPhone13Mini:
+             return false
+         default:
+-            return self.hasTopNotch
++            return self.hasTopNotch || self.hasDynamicIsland
+         }
+     }
+ }
+diff --git a/submodules/Display/Source/WindowContent.swift b/submodules/Display/Source/WindowContent.swift
+index 8873fc6..2701414 100644
+--- a/submodules/Display/Source/WindowContent.swift
++++ b/submodules/Display/Source/WindowContent.swift
+@@ -1477,7 +1477,8 @@ public class Window1 {
+                 
+                 if let image = self.badgeView.image {
+                     self.updateBadgeVisibility()
+-                    self.badgeView.frame = CGRect(origin: CGPoint(x: floorToScreenPixels((self.windowLayout.size.width - image.size.width) / 2.0), y: 5.0), size: image.size)
++                    let badgeY: CGFloat = self.deviceMetrics.hasDynamicIsland ? 18.0 : 5.0
++                    self.badgeView.frame = CGRect(origin: CGPoint(x: floorToScreenPixels((self.windowLayout.size.width - image.size.width) / 2.0), y: badgeY), size: image.size)
+                 }
+             }
+         }
+diff --git a/submodules/SettingsUI/Sources/AyuAppearanceController.swift b/submodules/SettingsUI/Sources/AyuAppearanceController.swift
+index e56a462..a864184 100644
+--- a/submodules/SettingsUI/Sources/AyuAppearanceController.swift
++++ b/submodules/SettingsUI/Sources/AyuAppearanceController.swift
+@@ -35,9 +35,9 @@ private enum AyuAppearanceEntry: ItemListNodeEntry {
+ 
+     var section: ItemListSectionId {
+         switch self.stableId {
+-        case 0 ... 2: return 0
+-        case 3 ... 4: return 1
+-        case 5 ... 6: return 2
++        case 0 ... 3: return 0
++        case 4 ... 5: return 1
++        case 6 ... 7: return 2
+         default: return 3
+         }
+     }
+@@ -54,7 +54,7 @@ private enum AyuAppearanceEntry: ItemListNodeEntry {
+         case let .input(id, text, placeholder):
+             return ItemListSingleLineInputItem(presentationData: presentationData, systemStyle: .glass, title: NSAttributedString(string: ""), text: text, placeholder: placeholder, type: .regular(capitalization: false, autocorrection: false), returnKeyType: .done, spacing: 0.0, clearType: .always, maxLength: 24, sectionId: self.section, textUpdated: { arguments.text(id, $0) }, action: arguments.save)
+         case let .action(id, title):
+-            return ItemListActionItem(presentationData: presentationData, systemStyle: .glass, title: title, kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: id == 7 ? arguments.save : arguments.reset)
++            return ItemListActionItem(presentationData: presentationData, systemStyle: .glass, title: title, kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: id == 8 ? arguments.save : arguments.reset)
+         case let .info(_, text):
+             return ItemListTextItem(presentationData: presentationData, text: .plain(text), sectionId: self.section)
+         }
+@@ -74,13 +74,14 @@ public func ayuAppearanceController(context: AccountContext) -> ViewController {
+             try store.update {
+                 if id == 1 { $0.appearance.showGhostButton = value }
+                 if id == 2 { $0.appearance.showMessageSeconds = value }
++                if id == 3 { $0.appearance.showTopBadge = value }
+             }
+         } catch { presentError?(error) }
+     }, text: { id, text in
+         let updated = draftText.modify { previous in
+             var updated = previous
+-            if id == 4 { updated.deleted = text }
+-            if id == 6 { updated.edited = text }
++            if id == 5 { updated.deleted = text }
++            if id == 7 { updated.edited = text }
+             return updated
+         }
+         draft.set(updated)
+@@ -116,13 +117,14 @@ public func ayuAppearanceController(context: AccountContext) -> ViewController {
+             .header(0, "AYUGRAM"),
+             .toggle(1, ru ? "Призрак в заголовке чата" : "Ghost button in chat header", appearance.showGhostButton),
+             .toggle(2, ru ? "Секунды во времени сообщений" : "Seconds in message timestamps", appearance.showMessageSeconds),
+-            .header(3, ru ? "МЕТКА УДАЛЁННЫХ СООБЩЕНИЙ" : "DELETED MESSAGE LABEL"),
+-            .input(4, text.deleted, ru ? "Удалено" : "Deleted"),
+-            .header(5, ru ? "МЕТКА ИЗМЕНЁННЫХ СООБЩЕНИЙ" : "EDITED MESSAGE LABEL"),
+-            .input(6, text.edited, presentationData.strings.Conversation_MessageEditedLabel),
+-            .action(7, ru ? (unsaved ? "Сохранить метки •" : "Сохранить метки") : (unsaved ? "Save labels •" : "Save labels")),
+-            .action(8, ru ? "Сбросить оформление чатов" : "Reset chat appearance"),
+-            .info(9, ru ? "Переключатели применяются сразу. Для текста нажми «Сохранить метки». Пустое поле возвращает стандартную подпись на языке приложения. До 24 символов и 96 байт в одной строке. Сохранение удалённых сообщений включается отдельно в «Истории сообщений». Если спрятать призрака, Ghost Mode по-прежнему доступен в настройках AyuGram." : "Switches apply immediately. Use Save labels for text changes. Empty fields restore the app language's default labels. Up to 24 characters and 96 bytes on one line. Deleted-message capture is enabled separately in Message History. Ghost Mode remains accessible from AyuGram settings when the header button is hidden.")
++            .toggle(3, ru ? "Верхний бейдж AyuGram" : "Top AyuGram badge", appearance.showTopBadge),
++            .header(4, ru ? "МЕТКА УДАЛЁННЫХ СООБЩЕНИЙ" : "DELETED MESSAGE LABEL"),
++            .input(5, text.deleted, ru ? "Удалено" : "Deleted"),
++            .header(6, ru ? "МЕТКА ИЗМЕНЁННЫХ СООБЩЕНИЙ" : "EDITED MESSAGE LABEL"),
++            .input(7, text.edited, presentationData.strings.Conversation_MessageEditedLabel),
++            .action(8, ru ? (unsaved ? "Сохранить метки •" : "Сохранить метки") : (unsaved ? "Save labels •" : "Save labels")),
++            .action(9, ru ? "Сбросить оформление чатов" : "Reset chat appearance"),
++            .info(10, ru ? "Переключатели применяются сразу. Для текста нажми «Сохранить метки». Пустое поле возвращает стандартную подпись на языке приложения. До 24 символов и 96 байт в одной строке. Сохранение удалённых сообщений включается отдельно в «Истории сообщений». Если спрятать призрака, Ghost Mode по-прежнему доступен в настройках AyuGram." : "Switches apply immediately. Use Save labels for text changes. Empty fields restore the app language's default labels. Up to 24 characters and 96 bytes on one line. Deleted-message capture is enabled separately in Message History. Ghost Mode remains accessible from AyuGram settings when the header button is hidden.")
+         ]
+         let data = ItemListPresentationData(presentationData)
+         let state = ItemListControllerState(presentationData: data, title: .text(ru ? "Оформление чатов" : "Chat Appearance"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
+diff --git a/submodules/SettingsUI/Sources/AyuSettingsController.swift b/submodules/SettingsUI/Sources/AyuSettingsController.swift
+index d5fc459..b79eb0d 100644
+--- a/submodules/SettingsUI/Sources/AyuSettingsController.swift
++++ b/submodules/SettingsUI/Sources/AyuSettingsController.swift
+@@ -685,6 +685,8 @@ private func ayuInterfaceSettingsController(context: AccountContext, contextMenu
+                 case 16: $0.interface.hideAllChatsFolder = value
+                 case 18: $0.interface.semiTransparentDeletedMessages = value
+                 case 19: $0.interface.backgroundNotifications = value
++                case 21: $0.interface.autoQuoteReplies = value
++                case 22: $0.interface.replyToDeletedMessages = value
+                 default: break
+                 }
+             }
+@@ -727,6 +729,9 @@ private func ayuInterfaceSettingsController(context: AccountContext, contextMenu
+             .info(17, ru ? "Режим стримера убирает окно AyuGram со скриншотов, записи экрана и трансляций, как секретные чаты; на самом телефоне всё видно, клавиатура системная и не скрывается. «Все чаты» скрываются, только если есть хотя бы одна папка; открывается первая папка. Применяется при следующем обновлении папок или после перезапуска." : "Streamer mode leaves the AyuGram window out of screenshots, screen recordings and streams, like secret chats; the phone itself still shows everything and the system keyboard is not hidden. All Chats is hidden only while at least one folder exists; the first folder opens. Applies on the next folder update or after a restart."),
+             .toggle(18, ru ? "Полупрозрачные удалённые сообщения" : "Semi-transparent deleted messages", value.semiTransparentDeletedMessages),
+             .toggle(19, ru ? "Уведомления в фоне" : "Background notifications", value.backgroundNotifications),
++            .toggle(21, ru ? "Ответ цитатой по умолчанию" : "Auto-quote replies by default", value.autoQuoteReplies),
++            .toggle(22, ru ? "Ответ на удалённые сообщения" : "Reply to deleted messages", value.replyToDeletedMessages),
++            .info(23, ru ? "При включении ответа на удалённые сообщения локально сохранённые сообщения цитируются псевдо-цитатой (как в AyuGram Desktop) без сетевых ошибок." : "When reply to deleted messages is enabled, locally kept deleted messages are quoted as a pseudo-quote (like AyuGram Desktop) without network errors."),
+             .info(20, ru ? "Истории, похожие каналы и приветственный стикер применяются при следующем открытии списка чатов или чата (надёжнее всего — после перезапуска). Скрытые истории не отмечаются просмотренными. Счётчики заменяются точкой. Спойлеры и zalgo-фильтр работают для текста сообщений. Предупреждение остаётся для ссылок с поддельным адресом и прокси. «Больше недавних стикеров» хранит до 200 вместо 20 на этом устройстве. Мини-приложения получают платформу android вместо ios." : "Stories, similar channels and the greeting sticker apply the next time the chat list or a chat opens (most reliably after a restart). Hidden stories are not marked as viewed. Counters become a dot. Spoilers and the zalgo filter apply to message text. The warning stays for links with a disguised host and for proxies. Unlimited recent stickers keeps up to 200 instead of 20 on this device. Mini apps receive the android platform instead of ios."),
+             .info(30, ru ? "Нажатие на ID копирует его. Счётчик меняется только на вкладке «Чаты»; состояние прочтения сохраняется. Быстрая пересылка скрывается возле обычных пузырьков, а комментарии и рекламные действия остаются доступны. MessageShot находится в меню сообщения и в действиях «Поделиться» для выбранных сообщений." : "Tap a profile ID to copy it. The badge setting affects the Chats tab and preserves read state. Quick-share hiding applies to ordinary bubbles; comment and sponsored-message actions remain available. MessageShot appears in the message menu and selected-message Share choices.")
+         ]
+diff --git a/submodules/TelegramCore/Sources/AyuGram/AyuAppearanceSettings.swift b/submodules/TelegramCore/Sources/AyuGram/AyuAppearanceSettings.swift
+index e48eaf7..878d3e3 100644
+--- a/submodules/TelegramCore/Sources/AyuGram/AyuAppearanceSettings.swift
++++ b/submodules/TelegramCore/Sources/AyuGram/AyuAppearanceSettings.swift
+@@ -3,6 +3,7 @@ import Foundation
+ public struct AyuAppearanceSettings: Codable, Equatable {
+     public var showGhostButton = true
+     public var showMessageSeconds = false
++    public var showTopBadge = true
+     /// Empty strings use the current language's standard labels.
+     public var deletedMark = ""
+     public var editedMark = ""
+@@ -10,13 +11,14 @@ public struct AyuAppearanceSettings: Codable, Equatable {
+     public init() {}
+ 
+     private enum CodingKeys: String, CodingKey {
+-        case showGhostButton, showMessageSeconds, deletedMark, editedMark
++        case showGhostButton, showMessageSeconds, showTopBadge, deletedMark, editedMark
+     }
+ 
+     public init(from decoder: Decoder) throws {
+         let values = try decoder.container(keyedBy: CodingKeys.self)
+         self.showGhostButton = try values.decodeIfPresent(Bool.self, forKey: .showGhostButton) ?? true
+         self.showMessageSeconds = try values.decodeIfPresent(Bool.self, forKey: .showMessageSeconds) ?? false
++        self.showTopBadge = try values.decodeIfPresent(Bool.self, forKey: .showTopBadge) ?? true
+         self.deletedMark = try values.decodeIfPresent(String.self, forKey: .deletedMark) ?? ""
+         self.editedMark = try values.decodeIfPresent(String.self, forKey: .editedMark) ?? ""
+         self.normalize()
+diff --git a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift b/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
+index eb08124..da23162 100644
+--- a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
++++ b/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
+@@ -15,6 +15,8 @@ public struct AyuInterfaceSettings: Codable, Equatable {
+     public var showSearchPhrase = true
+     public var showCopyMessageIds = true
+     public var showHideMessage = true
++    public var autoQuoteReplies = true
++    public var replyToDeletedMessages = true
+     // Desktop-parity display options (all off by default).
+     public var hideStories = false
+     public var hideSimilarChannels = false
+@@ -48,6 +50,7 @@ public struct AyuInterfaceSettings: Codable, Equatable {
+         case showAddFilter
+         case showRepeatText, showSearchPhrase, showCopyMessageIds
+         case showHideMessage
++        case autoQuoteReplies, replyToDeletedMessages
+         case hideStories, hideSimilarChannels, hidePremiumStatuses, hideUnreadCounters, revealSpoilers
+         case disableGreetingSticker, disableOpenLinkWarning, filterZalgo, spoofWebAppAsAndroid, unlimitedRecentStickers, streamerMode, hideAllChatsFolder, semiTransparentDeletedMessages, backgroundNotifications
+         case disableNumberRounding, hidePhoneNumber, disableUnarchiveSwipe
+@@ -69,6 +72,8 @@ public struct AyuInterfaceSettings: Codable, Equatable {
+         self.showSearchPhrase = try values.decodeIfPresent(Bool.self, forKey: .showSearchPhrase) ?? true
+         self.showCopyMessageIds = try values.decodeIfPresent(Bool.self, forKey: .showCopyMessageIds) ?? true
+         self.showHideMessage = try values.decodeIfPresent(Bool.self, forKey: .showHideMessage) ?? true
++        self.autoQuoteReplies = try values.decodeIfPresent(Bool.self, forKey: .autoQuoteReplies) ?? true
++        self.replyToDeletedMessages = try values.decodeIfPresent(Bool.self, forKey: .replyToDeletedMessages) ?? true
+         self.hideStories = try values.decodeIfPresent(Bool.self, forKey: .hideStories) ?? false
+         self.hideSimilarChannels = try values.decodeIfPresent(Bool.self, forKey: .hideSimilarChannels) ?? false
+         self.hidePremiumStatuses = try values.decodeIfPresent(Bool.self, forKey: .hidePremiumStatuses) ?? false
+diff --git a/submodules/TelegramCore/Sources/AyuGram/AyuPlugins.swift b/submodules/TelegramCore/Sources/AyuGram/AyuPlugins.swift
+index 4dd1323..10146cb 100644
+--- a/submodules/TelegramCore/Sources/AyuGram/AyuPlugins.swift
++++ b/submodules/TelegramCore/Sources/AyuGram/AyuPlugins.swift
+@@ -113,7 +113,7 @@ public struct AyuPluginManifest: Codable, Equatable {
+         guard self.format == "ayugram-ios-plugin", (1...7).contains(self.apiVersion), validID(self.id),
+               !self.name.isEmpty, self.name.count <= 64, !self.author.isEmpty, self.author.count <= 128,
+               !self.version.isEmpty, self.version.count <= 32, self.summary.count <= 2048,
+-              !self.actions.isEmpty, self.actions.count <= 8, Set(self.actions.map(\.id)).count == self.actions.count,
++              !self.actions.isEmpty, self.actions.count <= 32, Set(self.actions.map(\.id)).count == self.actions.count,
+               self.limitations.count <= 16, self.limitations.allSatisfy({ $0.count <= 512 }),
+               (self.convertedFrom?.count ?? 0) <= 128, (self.sourceSHA256?.count ?? 0) <= 64 else { throw AyuPluginError.invalidManifest }
+         for action in self.actions {
+@@ -133,10 +133,10 @@ public struct AyuPluginManifest: Codable, Equatable {
+             guard validID(action.id), !action.title.isEmpty, action.title.count <= 80 else { throw AyuPluginError.invalidManifest }
+             if action.kind == .replaceText || action.kind == .outgoingReplace {
+                 guard let find = action.find, !find.isEmpty, find.utf8.count <= 128,
+-                      let replacement = action.replacement, replacement.utf8.count <= 128 else { throw AyuPluginError.invalidManifest }
++                      let replacement = action.replacement, replacement.utf8.count <= 512 else { throw AyuPluginError.invalidManifest }
+                 if action.kind == .outgoingReplace {
+-                    guard !replacement.isEmpty, replacement.utf8.count <= find.utf8.count,
+-                          replacement.utf16.count <= find.utf16.count, (action.prefix?.utf8.count ?? 0) <= 128 else { throw AyuPluginError.invalidManifest }
++                    guard !replacement.isEmpty, replacement.utf8.count <= 512,
++                          (action.prefix?.utf8.count ?? 0) <= 128 else { throw AyuPluginError.invalidManifest }
+                 }
+             } else if action.find != nil || action.replacement != nil { throw AyuPluginError.invalidManifest }
+             if action.kind == .outgoingReplace {
+@@ -217,7 +217,7 @@ public struct AyuPluginRegistry: Codable, Equatable {
+     public private(set) var installed: [AyuInstalledPlugin] = []
+     public init() {}
+     public func validate() throws {
+-        guard self.installed.count <= 12, Set(self.installed.map { $0.manifest.id }).count == self.installed.count else { throw AyuPluginError.capacity }
++        guard self.installed.count <= 64, Set(self.installed.map { $0.manifest.id }).count == self.installed.count else { throw AyuPluginError.capacity }
+         for plugin in self.installed {
+             try plugin.manifest.validate()
+             if let settings = plugin.chatColorSettings {
+@@ -238,7 +238,7 @@ public struct AyuPluginRegistry: Codable, Equatable {
+         let oldPlugin = self.installed.first(where: { $0.manifest.id == manifest.id })
+         let oldSettings = oldPlugin?.cameraFlipSettings
+         var updated = self.installed.filter { $0.manifest.id != manifest.id }
+-        guard updated.count < 12 else { throw AyuPluginError.capacity }
++        guard updated.count < 64 else { throw AyuPluginError.capacity }
+         updated.append(AyuInstalledPlugin(manifest: manifest, cameraFlipSettings: manifest.actions.contains(where: { $0.kind == .cameraFlip }) ? oldSettings : nil, chatColorSettings: manifest.actions.contains(where: { $0.kind == .chatColors }) ? oldPlugin?.chatColorSettings : nil, arcadeSettings: manifest.actions.contains(where: { $0.kind == .arcadeGame }) ? oldPlugin?.arcadeSettings : nil))
+         self.installed = updated
+     }
+diff --git a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift b/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
+index dd44377..f0aae5c 100644
+--- a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
++++ b/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
+@@ -1091,10 +1091,21 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
+                         var threadMessageId: MessageId?
+                         var quote = replyToMessageId.quote
+                         let isQuote = quote != nil
++                        var isAyuDeleted = false
++                        var ayuAuthorTitle = ""
++                        var ayuQuoteText = ""
+                         if let replyMessage = transaction.getMessage(replyToMessageId.messageId) {
+                             if replyMessage.id.namespace == Namespaces.Message.Cloud, let threadId = replyMessage.threadId {
+                                 threadMessageId = MessageId(peerId: replyMessage.id.peerId, namespace: Namespaces.Message.Cloud, id: Int32(clamping: threadId))
+                             }
++                            isAyuDeleted = replyMessage.attributes.contains(where: { $0 is AyuDeletedMessageAttribute })
++                            if isAyuDeleted {
++                                ayuAuthorTitle = replyMessage.author?.debugDisplayTitle ?? "Deleted Message"
++                                ayuQuoteText = quote?.text ?? replyMessage.text
++                                if ayuQuoteText.count > 100 {
++                                    ayuQuoteText = String(ayuQuoteText.prefix(100)) + "…"
++                                }
++                            }
+                             if quote == nil, replyToMessageId.messageId.peerId != peerId {
+                                 let nsText = replyMessage.text as NSString
+                                 var replyMedia: Media?
+@@ -1115,7 +1126,33 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
+                                 }
+                             }
+                         }
+-                        attributes.append(ReplyMessageAttribute(messageId: replyToMessageId.messageId, threadMessageId: threadMessageId, quote: quote, isQuote: isQuote, innerSubject: replyToMessageId.innerSubject))
++                        if isAyuDeleted {
++                            let pseudoPrefix = "\(ayuAuthorTitle):\n\(ayuQuoteText)\n\n"
++                            text = pseudoPrefix + text
++                            let prefixUtf16Length = (pseudoPrefix as NSString).length
++                            let authorUtf16Length = (ayuAuthorTitle as NSString).length
++                            var newEntities: [MessageTextEntity] = [
++                                MessageTextEntity(range: 0 ..< prefixUtf16Length, type: .BlockQuote(isCollapsed: false)),
++                                MessageTextEntity(range: 0 ..< authorUtf16Length, type: .Bold)
++                            ]
++                            for attr in attributes {
++                                if let textAttr = attr as? TextEntitiesMessageAttribute {
++                                    for entity in textAttr.entities {
++                                        newEntities.append(MessageTextEntity(
++                                            range: (entity.range.lowerBound + prefixUtf16Length) ..< (entity.range.upperBound + prefixUtf16Length),
++                                            type: entity.type
++                                        ))
++                                    }
++                                }
++                            }
++                            attributes.removeAll(where: { $0 is TextEntitiesMessageAttribute })
++                            attributes.append(TextEntitiesMessageAttribute(entities: newEntities))
++                            if let threadMessageId = threadMessageId {
++                                attributes.append(ReplyMessageAttribute(messageId: threadMessageId, threadMessageId: threadMessageId, quote: nil, isQuote: false, innerSubject: nil))
++                            }
++                        } else {
++                            attributes.append(ReplyMessageAttribute(messageId: replyToMessageId.messageId, threadMessageId: threadMessageId, quote: quote, isQuote: isQuote, innerSubject: replyToMessageId.innerSubject))
++                        }
+                     }
+                     if let replyToStoryId = replyToStoryId {
+                         attributes.append(ReplyStoryAttribute(storyId: replyToStoryId))
+diff --git a/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift b/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift
+index 17f21b6..66d61fd 100644
+--- a/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift
++++ b/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift
+@@ -1607,10 +1607,31 @@ extension ChatControllerImpl {
+                 if canSendMessagesHere {
+                     let _ = strongSelf.presentVoiceMessageDiscardAlert(action: {
+                         if let message = strongSelf.chatDisplayNode.historyNode.messageInCurrentHistoryView(messageId)?._asMessage() {
++                            let quote: EngineMessageReplyQuote? = {
++                                guard strongSelf.context.account.network.ayuGhostMode.current.interface.autoQuoteReplies else {
++                                    return nil
++                                }
++                                let nsText = message.text as NSString
++                                guard nsText.length > 0 else {
++                                    return nil
++                                }
++                                let maxLength = quoteMaxLength(appConfig: strongSelf.context.currentAppConfiguration.with({ $0 }))
++                                let range = NSRange(location: 0, length: min(nsText.length, maxLength))
++                                return EngineMessageReplyQuote(
++                                    text: nsText.substring(with: range),
++                                    offset: nil,
++                                    entities: messageTextEntitiesInRange(
++                                        entities: message.textEntitiesAttribute?.entities ?? [],
++                                        range: range,
++                                        onlyQuoteable: true
++                                    ),
++                                    media: message.media.first(where: { $0 is TelegramMediaImage || $0 is TelegramMediaFile })
++                                )
++                            }()
+                             strongSelf.updateChatPresentationInterfaceState(animated: true, interactive: true, { $0.updatedInterfaceState({
+                                 $0.withUpdatedReplyMessageSubject(ChatInterfaceState.ReplyMessageSubject(
+                                     messageId: message.id,
+-                                    quote: nil,
++                                    quote: quote,
+                                     innerSubject: innerSubject
+                                 ))
+                             }).updatedReplyMessage(message).updatedSearch(nil).updatedShowCommands(false) }, completion: { t in
+diff --git a/submodules/TelegramUI/Sources/ChatInterfaceStateContextMenus.swift b/submodules/TelegramUI/Sources/ChatInterfaceStateContextMenus.swift
+index 5971ffd..ea5bdb2 100644
+--- a/submodules/TelegramUI/Sources/ChatInterfaceStateContextMenus.swift
++++ b/submodules/TelegramUI/Sources/ChatInterfaceStateContextMenus.swift
+@@ -829,7 +829,9 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
+     }
+     
+     if hasAyuDeletedMessages {
+-        canReply = false
++        if !context.account.network.ayuGhostMode.current.interface.replyToDeletedMessages {
++            canReply = false
++        }
+         canPin = false
+     }
+     var loadStickerSaveStatusSignal: Signal<Bool?, NoError> = .single(nil)
