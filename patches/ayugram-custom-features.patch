@@ -172,10 +172,18 @@ index eb08124..da23162 100644
          self.hideSimilarChannels = try values.decodeIfPresent(Bool.self, forKey: .hideSimilarChannels) ?? false
          self.hidePremiumStatuses = try values.decodeIfPresent(Bool.self, forKey: .hidePremiumStatuses) ?? false
 diff --git a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift b/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
-index dd44377..f0aae5c 100644
+index dd44377..65c7a2b 100644
 --- a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
 +++ b/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
-@@ -1091,10 +1091,21 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
+@@ -1034,6 +1034,7 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
+             
+             switch message {
+                 case let .message(text, requestedAttributes, inlineStickers, mediaReference, threadId, replyToMessageId, replyToStoryId, localGroupingKey, _, _):
++                    var text = text
+                     for (_, file) in inlineStickers {
+                         transaction.storeMediaIfNotPresent(media: file)
+                     }
+@@ -1091,10 +1092,21 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
                          var threadMessageId: MessageId?
                          var quote = replyToMessageId.quote
                          let isQuote = quote != nil
@@ -197,7 +205,7 @@ index dd44377..f0aae5c 100644
                              if quote == nil, replyToMessageId.messageId.peerId != peerId {
                                  let nsText = replyMessage.text as NSString
                                  var replyMedia: Media?
-@@ -1115,7 +1126,33 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
+@@ -1115,7 +1127,33 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
                                  }
                              }
                          }
