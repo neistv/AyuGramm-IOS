@@ -1,97 +1,5 @@
-diff --git a/submodules/Display/Source/DeviceMetrics.swift b/submodules/Display/Source/DeviceMetrics.swift
-index 7fa38a6..c2604c5 100644
---- a/submodules/Display/Source/DeviceMetrics.swift
-+++ b/submodules/Display/Source/DeviceMetrics.swift
-@@ -561,7 +561,7 @@ public enum DeviceMetrics: CaseIterable, Equatable {
-         case .iPhoneX, .iPhone12Mini, .iPhone13Mini:
-             return false
-         default:
--            return self.hasTopNotch
-+            return self.hasTopNotch || self.hasDynamicIsland
-         }
-     }
- }
-diff --git a/submodules/Display/Source/WindowContent.swift b/submodules/Display/Source/WindowContent.swift
-index 8873fc6..2701414 100644
---- a/submodules/Display/Source/WindowContent.swift
-+++ b/submodules/Display/Source/WindowContent.swift
-@@ -1477,7 +1477,8 @@ public class Window1 {
-                 
-                 if let image = self.badgeView.image {
-                     self.updateBadgeVisibility()
--                    self.badgeView.frame = CGRect(origin: CGPoint(x: floorToScreenPixels((self.windowLayout.size.width - image.size.width) / 2.0), y: 5.0), size: image.size)
-+                    let badgeY: CGFloat = self.deviceMetrics.hasDynamicIsland ? 18.0 : 5.0
-+                    self.badgeView.frame = CGRect(origin: CGPoint(x: floorToScreenPixels((self.windowLayout.size.width - image.size.width) / 2.0), y: badgeY), size: image.size)
-                 }
-             }
-         }
-diff --git a/submodules/SettingsUI/Sources/AyuAppearanceController.swift b/submodules/SettingsUI/Sources/AyuAppearanceController.swift
-index e56a462..a864184 100644
---- a/submodules/SettingsUI/Sources/AyuAppearanceController.swift
-+++ b/submodules/SettingsUI/Sources/AyuAppearanceController.swift
-@@ -35,9 +35,9 @@ private enum AyuAppearanceEntry: ItemListNodeEntry {
- 
-     var section: ItemListSectionId {
-         switch self.stableId {
--        case 0 ... 2: return 0
--        case 3 ... 4: return 1
--        case 5 ... 6: return 2
-+        case 0 ... 3: return 0
-+        case 4 ... 5: return 1
-+        case 6 ... 7: return 2
-         default: return 3
-         }
-     }
-@@ -54,7 +54,7 @@ private enum AyuAppearanceEntry: ItemListNodeEntry {
-         case let .input(id, text, placeholder):
-             return ItemListSingleLineInputItem(presentationData: presentationData, systemStyle: .glass, title: NSAttributedString(string: ""), text: text, placeholder: placeholder, type: .regular(capitalization: false, autocorrection: false), returnKeyType: .done, spacing: 0.0, clearType: .always, maxLength: 24, sectionId: self.section, textUpdated: { arguments.text(id, $0) }, action: arguments.save)
-         case let .action(id, title):
--            return ItemListActionItem(presentationData: presentationData, systemStyle: .glass, title: title, kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: id == 7 ? arguments.save : arguments.reset)
-+            return ItemListActionItem(presentationData: presentationData, systemStyle: .glass, title: title, kind: .generic, alignment: .natural, sectionId: self.section, style: .blocks, action: id == 8 ? arguments.save : arguments.reset)
-         case let .info(_, text):
-             return ItemListTextItem(presentationData: presentationData, text: .plain(text), sectionId: self.section)
-         }
-@@ -74,13 +74,14 @@ public func ayuAppearanceController(context: AccountContext) -> ViewController {
-             try store.update {
-                 if id == 1 { $0.appearance.showGhostButton = value }
-                 if id == 2 { $0.appearance.showMessageSeconds = value }
-+                if id == 3 { $0.appearance.showTopBadge = value }
-             }
-         } catch { presentError?(error) }
-     }, text: { id, text in
-         let updated = draftText.modify { previous in
-             var updated = previous
--            if id == 4 { updated.deleted = text }
--            if id == 6 { updated.edited = text }
-+            if id == 5 { updated.deleted = text }
-+            if id == 7 { updated.edited = text }
-             return updated
-         }
-         draft.set(updated)
-@@ -116,13 +117,14 @@ public func ayuAppearanceController(context: AccountContext) -> ViewController {
-             .header(0, "AYUGRAM"),
-             .toggle(1, ru ? "Призрак в заголовке чата" : "Ghost button in chat header", appearance.showGhostButton),
-             .toggle(2, ru ? "Секунды во времени сообщений" : "Seconds in message timestamps", appearance.showMessageSeconds),
--            .header(3, ru ? "МЕТКА УДАЛЁННЫХ СООБЩЕНИЙ" : "DELETED MESSAGE LABEL"),
--            .input(4, text.deleted, ru ? "Удалено" : "Deleted"),
--            .header(5, ru ? "МЕТКА ИЗМЕНЁННЫХ СООБЩЕНИЙ" : "EDITED MESSAGE LABEL"),
--            .input(6, text.edited, presentationData.strings.Conversation_MessageEditedLabel),
--            .action(7, ru ? (unsaved ? "Сохранить метки •" : "Сохранить метки") : (unsaved ? "Save labels •" : "Save labels")),
--            .action(8, ru ? "Сбросить оформление чатов" : "Reset chat appearance"),
--            .info(9, ru ? "Переключатели применяются сразу. Для текста нажми «Сохранить метки». Пустое поле возвращает стандартную подпись на языке приложения. До 24 символов и 96 байт в одной строке. Сохранение удалённых сообщений включается отдельно в «Истории сообщений». Если спрятать призрака, Ghost Mode по-прежнему доступен в настройках AyuGram." : "Switches apply immediately. Use Save labels for text changes. Empty fields restore the app language's default labels. Up to 24 characters and 96 bytes on one line. Deleted-message capture is enabled separately in Message History. Ghost Mode remains accessible from AyuGram settings when the header button is hidden.")
-+            .toggle(3, ru ? "Верхний бейдж AyuGram" : "Top AyuGram badge", appearance.showTopBadge),
-+            .header(4, ru ? "МЕТКА УДАЛЁННЫХ СООБЩЕНИЙ" : "DELETED MESSAGE LABEL"),
-+            .input(5, text.deleted, ru ? "Удалено" : "Deleted"),
-+            .header(6, ru ? "МЕТКА ИЗМЕНЁННЫХ СООБЩЕНИЙ" : "EDITED MESSAGE LABEL"),
-+            .input(7, text.edited, presentationData.strings.Conversation_MessageEditedLabel),
-+            .action(8, ru ? (unsaved ? "Сохранить метки •" : "Сохранить метки") : (unsaved ? "Save labels •" : "Save labels")),
-+            .action(9, ru ? "Сбросить оформление чатов" : "Reset chat appearance"),
-+            .info(10, ru ? "Переключатели применяются сразу. Для текста нажми «Сохранить метки». Пустое поле возвращает стандартную подпись на языке приложения. До 24 символов и 96 байт в одной строке. Сохранение удалённых сообщений включается отдельно в «Истории сообщений». Если спрятать призрака, Ghost Mode по-прежнему доступен в настройках AyuGram." : "Switches apply immediately. Use Save labels for text changes. Empty fields restore the app language's default labels. Up to 24 characters and 96 bytes on one line. Deleted-message capture is enabled separately in Message History. Ghost Mode remains accessible from AyuGram settings when the header button is hidden.")
-         ]
-         let data = ItemListPresentationData(presentationData)
-         let state = ItemListControllerState(presentationData: data, title: .text(ru ? "Оформление чатов" : "Chat Appearance"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
 diff --git a/submodules/SettingsUI/Sources/AyuSettingsController.swift b/submodules/SettingsUI/Sources/AyuSettingsController.swift
-index d5fc459..b79eb0d 100644
+index d5fc459..49a4a38 100644
 --- a/submodules/SettingsUI/Sources/AyuSettingsController.swift
 +++ b/submodules/SettingsUI/Sources/AyuSettingsController.swift
 @@ -685,6 +685,8 @@ private func ayuInterfaceSettingsController(context: AccountContext, contextMenu
@@ -109,38 +17,10 @@ index d5fc459..b79eb0d 100644
              .toggle(19, ru ? "Уведомления в фоне" : "Background notifications", value.backgroundNotifications),
 +            .toggle(21, ru ? "Ответ цитатой по умолчанию" : "Auto-quote replies by default", value.autoQuoteReplies),
 +            .toggle(22, ru ? "Ответ на удалённые сообщения" : "Reply to deleted messages", value.replyToDeletedMessages),
-+            .info(23, ru ? "При включении ответа на удалённые сообщения локально сохранённые сообщения цитируются псевдо-цитатой (как в AyuGram Desktop) без сетевых ошибок." : "When reply to deleted messages is enabled, locally kept deleted messages are quoted as a pseudo-quote (like AyuGram Desktop) without network errors."),
++            .info(23, ru ? "«Ответ цитатой» автоматически вставляет цитату при ответе. «Ответ на удалённые» оформляет ответ как красивую псевдо-цитату (как в AyuGramDesktop), предотвращая ошибку сервера." : "Auto-quote automatically inserts a quote when replying. Reply to deleted formats a pseudo-quote block (like AyuGramDesktop) preventing server errors."),
              .info(20, ru ? "Истории, похожие каналы и приветственный стикер применяются при следующем открытии списка чатов или чата (надёжнее всего — после перезапуска). Скрытые истории не отмечаются просмотренными. Счётчики заменяются точкой. Спойлеры и zalgo-фильтр работают для текста сообщений. Предупреждение остаётся для ссылок с поддельным адресом и прокси. «Больше недавних стикеров» хранит до 200 вместо 20 на этом устройстве. Мини-приложения получают платформу android вместо ios." : "Stories, similar channels and the greeting sticker apply the next time the chat list or a chat opens (most reliably after a restart). Hidden stories are not marked as viewed. Counters become a dot. Spoilers and the zalgo filter apply to message text. The warning stays for links with a disguised host and for proxies. Unlimited recent stickers keeps up to 200 instead of 20 on this device. Mini apps receive the android platform instead of ios."),
              .info(30, ru ? "Нажатие на ID копирует его. Счётчик меняется только на вкладке «Чаты»; состояние прочтения сохраняется. Быстрая пересылка скрывается возле обычных пузырьков, а комментарии и рекламные действия остаются доступны. MessageShot находится в меню сообщения и в действиях «Поделиться» для выбранных сообщений." : "Tap a profile ID to copy it. The badge setting affects the Chats tab and preserves read state. Quick-share hiding applies to ordinary bubbles; comment and sponsored-message actions remain available. MessageShot appears in the message menu and selected-message Share choices.")
          ]
-diff --git a/submodules/TelegramCore/Sources/AyuGram/AyuAppearanceSettings.swift b/submodules/TelegramCore/Sources/AyuGram/AyuAppearanceSettings.swift
-index e48eaf7..878d3e3 100644
---- a/submodules/TelegramCore/Sources/AyuGram/AyuAppearanceSettings.swift
-+++ b/submodules/TelegramCore/Sources/AyuGram/AyuAppearanceSettings.swift
-@@ -3,6 +3,7 @@ import Foundation
- public struct AyuAppearanceSettings: Codable, Equatable {
-     public var showGhostButton = true
-     public var showMessageSeconds = false
-+    public var showTopBadge = true
-     /// Empty strings use the current language's standard labels.
-     public var deletedMark = ""
-     public var editedMark = ""
-@@ -10,13 +11,14 @@ public struct AyuAppearanceSettings: Codable, Equatable {
-     public init() {}
- 
-     private enum CodingKeys: String, CodingKey {
--        case showGhostButton, showMessageSeconds, deletedMark, editedMark
-+        case showGhostButton, showMessageSeconds, showTopBadge, deletedMark, editedMark
-     }
- 
-     public init(from decoder: Decoder) throws {
-         let values = try decoder.container(keyedBy: CodingKeys.self)
-         self.showGhostButton = try values.decodeIfPresent(Bool.self, forKey: .showGhostButton) ?? true
-         self.showMessageSeconds = try values.decodeIfPresent(Bool.self, forKey: .showMessageSeconds) ?? false
-+        self.showTopBadge = try values.decodeIfPresent(Bool.self, forKey: .showTopBadge) ?? true
-         self.deletedMark = try values.decodeIfPresent(String.self, forKey: .deletedMark) ?? ""
-         self.editedMark = try values.decodeIfPresent(String.self, forKey: .editedMark) ?? ""
-         self.normalize()
 diff --git a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift b/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
 index eb08124..da23162 100644
 --- a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
