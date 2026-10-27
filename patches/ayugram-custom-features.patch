@@ -171,51 +171,6 @@ index eb08124..da23162 100644
          self.hideStories = try values.decodeIfPresent(Bool.self, forKey: .hideStories) ?? false
          self.hideSimilarChannels = try values.decodeIfPresent(Bool.self, forKey: .hideSimilarChannels) ?? false
          self.hidePremiumStatuses = try values.decodeIfPresent(Bool.self, forKey: .hidePremiumStatuses) ?? false
-diff --git a/submodules/TelegramCore/Sources/AyuGram/AyuPlugins.swift b/submodules/TelegramCore/Sources/AyuGram/AyuPlugins.swift
-index 4dd1323..10146cb 100644
---- a/submodules/TelegramCore/Sources/AyuGram/AyuPlugins.swift
-+++ b/submodules/TelegramCore/Sources/AyuGram/AyuPlugins.swift
-@@ -113,7 +113,7 @@ public struct AyuPluginManifest: Codable, Equatable {
-         guard self.format == "ayugram-ios-plugin", (1...7).contains(self.apiVersion), validID(self.id),
-               !self.name.isEmpty, self.name.count <= 64, !self.author.isEmpty, self.author.count <= 128,
-               !self.version.isEmpty, self.version.count <= 32, self.summary.count <= 2048,
--              !self.actions.isEmpty, self.actions.count <= 8, Set(self.actions.map(\.id)).count == self.actions.count,
-+              !self.actions.isEmpty, self.actions.count <= 32, Set(self.actions.map(\.id)).count == self.actions.count,
-               self.limitations.count <= 16, self.limitations.allSatisfy({ $0.count <= 512 }),
-               (self.convertedFrom?.count ?? 0) <= 128, (self.sourceSHA256?.count ?? 0) <= 64 else { throw AyuPluginError.invalidManifest }
-         for action in self.actions {
-@@ -133,10 +133,10 @@ public struct AyuPluginManifest: Codable, Equatable {
-             guard validID(action.id), !action.title.isEmpty, action.title.count <= 80 else { throw AyuPluginError.invalidManifest }
-             if action.kind == .replaceText || action.kind == .outgoingReplace {
-                 guard let find = action.find, !find.isEmpty, find.utf8.count <= 128,
--                      let replacement = action.replacement, replacement.utf8.count <= 128 else { throw AyuPluginError.invalidManifest }
-+                      let replacement = action.replacement, replacement.utf8.count <= 512 else { throw AyuPluginError.invalidManifest }
-                 if action.kind == .outgoingReplace {
--                    guard !replacement.isEmpty, replacement.utf8.count <= find.utf8.count,
--                          replacement.utf16.count <= find.utf16.count, (action.prefix?.utf8.count ?? 0) <= 128 else { throw AyuPluginError.invalidManifest }
-+                    guard !replacement.isEmpty, replacement.utf8.count <= 512,
-+                          (action.prefix?.utf8.count ?? 0) <= 128 else { throw AyuPluginError.invalidManifest }
-                 }
-             } else if action.find != nil || action.replacement != nil { throw AyuPluginError.invalidManifest }
-             if action.kind == .outgoingReplace {
-@@ -217,7 +217,7 @@ public struct AyuPluginRegistry: Codable, Equatable {
-     public private(set) var installed: [AyuInstalledPlugin] = []
-     public init() {}
-     public func validate() throws {
--        guard self.installed.count <= 12, Set(self.installed.map { $0.manifest.id }).count == self.installed.count else { throw AyuPluginError.capacity }
-+        guard self.installed.count <= 64, Set(self.installed.map { $0.manifest.id }).count == self.installed.count else { throw AyuPluginError.capacity }
-         for plugin in self.installed {
-             try plugin.manifest.validate()
-             if let settings = plugin.chatColorSettings {
-@@ -238,7 +238,7 @@ public struct AyuPluginRegistry: Codable, Equatable {
-         let oldPlugin = self.installed.first(where: { $0.manifest.id == manifest.id })
-         let oldSettings = oldPlugin?.cameraFlipSettings
-         var updated = self.installed.filter { $0.manifest.id != manifest.id }
--        guard updated.count < 12 else { throw AyuPluginError.capacity }
-+        guard updated.count < 64 else { throw AyuPluginError.capacity }
-         updated.append(AyuInstalledPlugin(manifest: manifest, cameraFlipSettings: manifest.actions.contains(where: { $0.kind == .cameraFlip }) ? oldSettings : nil, chatColorSettings: manifest.actions.contains(where: { $0.kind == .chatColors }) ? oldPlugin?.chatColorSettings : nil, arcadeSettings: manifest.actions.contains(where: { $0.kind == .arcadeGame }) ? oldPlugin?.arcadeSettings : nil))
-         self.installed = updated
-     }
 diff --git a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift b/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
 index dd44377..f0aae5c 100644
 --- a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
