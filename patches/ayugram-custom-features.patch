@@ -123,9 +123,18 @@ index f41ddcf..c8567d6 100644
              .toggle(3, 31, icons[31] ?? nil, AyuStrings.miniAppsAsAndroid.text(ru), nil, value.spoofWebAppAsAndroid),
              .toggle(3, 32, icons[32] ?? nil, AyuStrings.streamerMode.text(ru), nil, value.streamerMode),
 diff --git a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift b/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
-index 86b4e0d..326c986 100644
+index 86b4e0d..fa16503 100644
 --- a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
 +++ b/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
+@@ -1,7 +1,7 @@
+ import Foundation
+ 
+ public struct AyuInterfaceSettings: Codable, Equatable {
+-    public var showPeerIds = false
++    public var showPeerIds = true
+     public var hideFastShare = false
+     public var hideChatsBadge = false
+     public var showMessageShot = true
 @@ -42,6 +42,9 @@ public struct AyuInterfaceSettings: Codable, Equatable {
      public var addCommaAfterMention = false
      /// Keeps video messages level against the phone's roll (gyroscope counter-rotation).
@@ -136,7 +145,7 @@ index 86b4e0d..326c986 100644
      public init() {}
  
      private enum CodingKeys: String, CodingKey {
-@@ -55,6 +58,7 @@ public struct AyuInterfaceSettings: Codable, Equatable {
+@@ -55,10 +58,11 @@ public struct AyuInterfaceSettings: Codable, Equatable {
          case disableNumberRounding, hidePhoneNumber, disableUnarchiveSwipe
          case hideStickerTime, disableJumpToNextChannel, hideKeyboardOnScroll, addCommaAfterMention
          case horizonLockVideoMessages
@@ -144,6 +153,11 @@ index 86b4e0d..326c986 100644
      }
      public init(from decoder: Decoder) throws {
          let values = try decoder.container(keyedBy: CodingKeys.self)
+-        self.showPeerIds = try values.decodeIfPresent(Bool.self, forKey: .showPeerIds) ?? false
++        self.showPeerIds = try values.decodeIfPresent(Bool.self, forKey: .showPeerIds) ?? true
+         self.hideFastShare = try values.decodeIfPresent(Bool.self, forKey: .hideFastShare) ?? false
+         self.hideChatsBadge = try values.decodeIfPresent(Bool.self, forKey: .hideChatsBadge) ?? false
+         self.showMessageShot = try values.decodeIfPresent(Bool.self, forKey: .showMessageShot) ?? true
 @@ -94,6 +98,9 @@ public struct AyuInterfaceSettings: Codable, Equatable {
          self.hideKeyboardOnScroll = try values.decodeIfPresent(Bool.self, forKey: .hideKeyboardOnScroll) ?? false
          self.addCommaAfterMention = try values.decodeIfPresent(Bool.self, forKey: .addCommaAfterMention) ?? false
@@ -401,6 +415,163 @@ index 0e6ead7..e1dcd4a 100644
              case let .emojiStatus(emojiStatus):
                  currentEmojiStatus = emojiStatus
                  let ayuLoop = peer?.id != self.context.account.peerId || ayuCosmetics.localStatusFileId != emojiStatus.fileId || ayuCosmetics.animateLocalEmoji
+diff --git a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoProfileItems.swift b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoProfileItems.swift
+index 6680052..2d07e5b 100644
+--- a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoProfileItems.swift
++++ b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoProfileItems.swift
+@@ -18,6 +18,91 @@ import PeerNameColorItem
+ import BoostLevelIconComponent
+ import UndoUI
+ 
++private func ayuEstimatedRegistrationDate(userId: Int64) -> String {
++    let milestones: [(Int64, Int, Int, Int)] = [
++        (100_000, 2013, 8, 14),
++        (5_000_000, 2014, 1, 1),
++        (20_000_000, 2014, 6, 1),
++        (50_000_000, 2015, 1, 1),
++        (100_000_000, 2015, 6, 1),
++        (180_000_000, 2016, 1, 1),
++        (250_000_000, 2016, 6, 1),
++        (330_000_000, 2017, 1, 1),
++        (400_000_000, 2017, 6, 1),
++        (500_000_000, 2018, 1, 1),
++        (600_000_000, 2018, 6, 1),
++        (750_000_000, 2019, 1, 1),
++        (900_000_000, 2019, 6, 1),
++        (1_050_000_000, 2020, 1, 1),
++        (1_250_000_000, 2020, 6, 1),
++        (1_550_000_000, 2021, 1, 1),
++        (1_850_000_000, 2021, 6, 1),
++        (5_100_000_000, 2022, 1, 1),
++        (5_450_000_000, 2022, 6, 1),
++        (5_900_000_000, 2023, 1, 1),
++        (6_300_000_000, 2023, 6, 1),
++        (6_744_993_914, 2023, 10, 31),
++        (6_950_000_000, 2024, 1, 1),
++        (7_300_000_000, 2024, 6, 1),
++        (7_800_000_000, 2025, 1, 1),
++        (8_300_000_000, 2025, 6, 1),
++        (8_800_000_000, 2026, 1, 1),
++        (9_400_000_000, 2026, 10, 1)
++    ]
++    let monthsRu = [
++        "января", "февраля", "марта", "апреля", "мая", "июня",
++        "июля", "августа", "сентября", "октября", "ноября", "декабря"
++    ]
++    if userId <= milestones[0].0 {
++        return "14 августа 2013"
++    } else if userId >= milestones.last!.0 {
++        return "октября 2026"
++    }
++    for i in 0 ..< (milestones.count - 1) {
++        let m1 = milestones[i]
++        let m2 = milestones[i + 1]
++        if userId >= m1.0 && userId <= m2.0 {
++            let progress = Double(userId - m1.0) / Double(m2.0 - m1.0)
++            let cal = Calendar(identifier: .gregorian)
++            var c1 = DateComponents()
++            c1.year = m1.1; c1.month = m1.2; c1.day = m1.3
++            var c2 = DateComponents()
++            c2.year = m2.1; c2.month = m2.2; c2.day = m2.3
++            if let d1 = cal.date(from: c1), let d2 = cal.date(from: c2) {
++                let totalSec = d2.timeIntervalSince(d1)
++                let targetDate = d1.addingTimeInterval(totalSec * progress)
++                let comps = cal.dateComponents([.year, .month, .day], from: targetDate)
++                let day = comps.day ?? 1
++                let month = comps.month ?? 1
++                let year = comps.year ?? 2023
++                let monthName = monthsRu[max(0, min(11, month - 1))]
++                return "\(day) \(monthName) \(year)"
++            }
++            break
++        }
++    }
++    return "неизвестно"
++}
++
++private func ayuPeerDcLocationString(peer: Peer?) -> String {
++    guard let peer = peer else { return "DC Unknown" }
++    var dcId: Int? = nil
++    if let small = peer.smallProfileImage, let res = small.resource as? CloudPeerPhotoSizeMediaResource {
++        dcId = res.datacenterId
++    } else if let large = peer.largeProfileImage, let res = large.resource as? CloudPeerPhotoSizeMediaResource {
++        dcId = res.datacenterId
++    }
++    guard let id = dcId else { return "DC Unknown" }
++    let loc: String
++    switch id {
++    case 1, 3: loc = "Miami FL, USA"
++    case 2, 4: loc = "Amsterdam, NL"
++    case 5: loc = "Singapore, SG"
++    default: loc = "Unknown"
++    }
++    return "DC\(id), \(loc)"
++}
++
+ private let enabledPublicBioEntities: EnabledEntityTypes = [.allUrl, .mention, .hashtag]
+ private let enabledPrivateBioEntities: EnabledEntityTypes = [.internalUrl, .mention, .hashtag]
+ 
+@@ -244,6 +329,36 @@ func infoItems(
+                 }, contextAction: birthdayContextAction, requestLayout: { _ in
+                 }))
+             }
++
++            let idText = "\(user.id.id._internalGetInt64Value())"
++            let dcText = ayuPeerDcLocationString(peer: user)
++            let ru = presentationData.strings.baseLanguageCode.hasPrefix("ru")
++            let regDateStr = ayuEstimatedRegistrationDate(userId: user.id.id._internalGetInt64Value())
++            let regMessage: String
++            if isMyProfile {
++                regMessage = ru ? "Вы создали свой аккаунт примерно \(regDateStr)." : "You created your account approximately on \(regDateStr)."
++            } else {
++                let name = user.displayTitle(strings: presentationData.strings, displayOrder: presentationData.nameDisplayOrder)
++                regMessage = ru ? "\(name) создал(а) свой аккаунт примерно \(regDateStr)." : "\(name) created their account approximately on \(regDateStr)."
++            }
++            items[currentPeerInfoSection]!.append(
++                PeerInfoScreenLabeledValueItem(
++                    id: "ayu-dc-profile-item",
++                    label: dcText,
++                    text: idText,
++                    textColor: .primary,
++                    action: { _, _ in
++                        UIPasteboard.general.string = idText
++                        interaction.getController()?.present(UndoOverlayController(presentationData: presentationData, content: .copy(text: ru ? "ID скопирован" : "ID copied"), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .current)
++                    },
++                    longTapAction: { _ in
++                        interaction.getController()?.present(UndoOverlayController(presentationData: presentationData, content: .info(title: nil, text: regMessage, timeout: 5.0, customUndoText: nil), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .current)
++                    },
++                    requestLayout: { animated in
++                        interaction.requestLayout(animated)
++                    }
++                )
++            )
+             
+             var hasAbout = false
+             if let about = cachedData.about, !about.isEmpty {
+@@ -901,23 +1016,6 @@ func infoItems(
+         }
+     }
+     
+-    if context.account.network.ayuGhostMode.current.interface.showPeerIds, let peer = data.peer {
+-        let kind: AyuPeerIdFormat.Kind
+-        switch peer.id.namespace {
+-        case Namespaces.Peer.CloudUser: kind = .user
+-        case Namespaces.Peer.CloudGroup: kind = .group
+-        case Namespaces.Peer.CloudChannel: kind = .channel
+-        default: kind = .other
+-        }
+-        let value = AyuPeerIdFormat.text(id: peer.id.id._internalGetInt64Value(), kind: kind)
+-        let ru = presentationData.strings.baseLanguageCode.hasPrefix("ru")
+-        let copy: () -> Void = {
+-            UIPasteboard.general.string = value
+-            interaction.getController()?.present(UndoOverlayController(presentationData: presentationData, content: .copy(text: ru ? "ID скопирован" : "ID copied"), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), in: .current)
+-        }
+-        items[.peerInfo]!.append(PeerInfoScreenLabeledValueItem(id: "ayu-peer-id", label: "Telegram ID", rightLabel: ru ? "Копировать" : "Copy", text: value, textColor: .accent, action: { _, _ in copy() }, longTapAction: { _ in copy() }, requestLayout: { interaction.requestLayout($0) }))
+-    }
+-
+     var result: [(AnyHashable, [PeerInfoScreenItem])] = []
+     for section in InfoSection.allCases {
+         if let sectionItems = items[section], !sectionItems.isEmpty {
 diff --git a/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift b/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift
 index 17f21b6..0ab035e 100644
 --- a/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift
