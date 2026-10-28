@@ -19,6 +19,7 @@ if actual != pin["commit"]:
 patches = [
     root / "patches" / "ayugram-ghost-mode.patch",
     root / "patches" / "ayugram-custom-features.patch",
+    root / "patches" / "ayugram-followup-features.patch",
 ]
 for patch in patches:
     subprocess.run(["git", "apply", "--check", str(patch)], cwd=source, check=True)

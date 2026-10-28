@@ -39,6 +39,24 @@ class SupporterBadgeTests(unittest.TestCase):
             self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
             self.assertEqual(struct.unpack(">II", data[16:24]), size)
 
+    def test_ios_developer_registry_has_unique_valid_entries(self):
+        registry = json.loads((ROOT / "assets" / "ayugram_ios_badges.json").read_text())
+        badges = registry["badges"]
+        ids = [badge["id"] for badge in badges]
+
+        self.assertEqual(registry["version"], 1)
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertTrue(all(badge["documentId"] > 0 and badge["title"] for badge in badges))
+
+    def test_followup_patch_has_conditional_opacity_slider(self):
+        patch = (ROOT / "patches" / "ayugram-followup-features.patch").read_text()
+
+        self.assertIn("deletedMessageTransparency", patch)
+        self.assertIn("entries.append(.slider(0, 6", patch)
+        self.assertIn("value.semiTransparentDeletedMessages", patch)
+        self.assertIn("minimumValue: minimumValue, maximumValue: maximumValue", patch)
+        self.assertIn("raw.githubusercontent.com/neistv/AyuGramm-IOS/main/assets/ayugram_ios_badges.json", patch)
+
 
 if __name__ == "__main__":
     unittest.main()
