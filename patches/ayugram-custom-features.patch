@@ -1,27 +1,66 @@
 diff --git a/submodules/ChatListUI/Sources/Node/ChatListItem.swift b/submodules/ChatListUI/Sources/Node/ChatListItem.swift
-index 8e2e4a6..90096fc 100644
+index 8e2e4a6..e40bfca 100644
 --- a/submodules/ChatListUI/Sources/Node/ChatListItem.swift
 +++ b/submodules/ChatListUI/Sources/Node/ChatListItem.swift
-@@ -3607,6 +3607,9 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
+@@ -3607,6 +3607,10 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                              if peer.isVerified {
                                  currentCredibilityIconContent = .verified(fillColor: item.presentationData.theme.list.itemCheckColors.fillColor, foregroundColor: item.presentationData.theme.list.itemCheckColors.foregroundColor, sizeType: .compact)
                              }
-+                            if currentCredibilityIconContent == nil && currentStatusIconContent == nil && item.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
++                            if !peer.isVerified && !peer.isScam && !peer.isFake && item.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
 +                                currentCredibilityIconContent = .image(image: UIImage(bundleImageName: "AyuGram/ExteraBadge"), tintColor: item.presentationData.theme.list.itemAccentColor)
++                                currentStatusIconContent = nil
 +                            }
                              if let verificationIconFileId = peer.verificationIconFileId {
                                  currentVerifiedIconContent = .animation(content: .customEmoji(fileId: verificationIconFileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: item.presentationData.theme.list.mediaPlaceholderColor, themeColor: item.presentationData.theme.list.itemAccentColor, loopMode: .count(0))
                              }
-@@ -3638,6 +3641,9 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
+@@ -3638,6 +3642,10 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                      if peer.isVerified {
                          currentCredibilityIconContent = .verified(fillColor: item.presentationData.theme.list.itemCheckColors.fillColor, foregroundColor: item.presentationData.theme.list.itemCheckColors.foregroundColor, sizeType: .compact)
                      }
-+                    if currentCredibilityIconContent == nil && currentStatusIconContent == nil && item.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
++                    if !peer.isVerified && !peer.isScam && !peer.isFake && item.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
 +                        currentCredibilityIconContent = .image(image: UIImage(bundleImageName: "AyuGram/ExteraBadge"), tintColor: item.presentationData.theme.list.itemAccentColor)
++                        currentStatusIconContent = nil
 +                    }
                      if let verificationIconFileId = peer.verificationIconFileId {
                          currentVerifiedIconContent = .animation(content: .customEmoji(fileId: verificationIconFileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: item.presentationData.theme.list.mediaPlaceholderColor, themeColor: item.presentationData.theme.list.itemAccentColor, loopMode: .count(0))
                      }
+diff --git a/submodules/SettingsUI/Sources/AyuGramSettingsController.swift b/submodules/SettingsUI/Sources/AyuGramSettingsController.swift
+index 786127b..4716128 100644
+--- a/submodules/SettingsUI/Sources/AyuGramSettingsController.swift
++++ b/submodules/SettingsUI/Sources/AyuGramSettingsController.swift
+@@ -21,6 +21,7 @@ private enum AyuGramRow: Int32 {
+     case localPremium = 21
+     case filters = 22
+     case nearbyContact = 23
++    case interface = 24
+     case channel = 31
+     case sourceCode = 32
+ }
+@@ -49,6 +50,8 @@ public func ayuGramPreferencesController(context: AccountContext) -> ViewControl
+             push?(ayuChatOptionsController(context: context, regex: true))
+         case .nearbyContact:
+             push?(ayuNearbyContactController(context: context))
++        case .interface:
++            push?(ayuInterfacePageController(context: context))
+         case .channel:
+             ayuOpenChannel(context: context, navigation: navigation?())
+         case .sourceCode:
+@@ -63,6 +66,7 @@ public func ayuGramPreferencesController(context: AccountContext) -> ViewControl
+         .localPremium: AyuSettingsIcons.glyph("Item List/Icons/Premium", color: UIColor(rgb: 0xAF52DE)),
+         .filters: AyuSettingsIcons.glyph("AyuGram/Filter", color: UIColor(rgb: 0xFF3B30), side: 20.0),
+         .nearbyContact: AyuSettingsIcons.symbol("antenna.radiowaves.left.and.right", color: UIColor(rgb: 0x007AFF)),
++        .interface: AyuSettingsIcons.symbol("bubble.left.and.bubble.right.fill", color: UIColor(rgb: 0x32ADE6)),
+         .channel: AyuSettingsIcons.symbol("megaphone.fill", color: UIColor(rgb: 0x007AFF)),
+         .sourceCode: AyuSettingsIcons.symbol("chevron.left.forwardslash.chevron.right", color: UIColor(rgb: 0x5856D6))
+     ]
+@@ -84,6 +88,7 @@ public func ayuGramPreferencesController(context: AccountContext) -> ViewControl
+             .header(3, 20, AyuStrings.qolToggles.text(ru)),
+             link(3, .localPremium, AyuStrings.localPremiumStatus.text(ru)),
+             link(3, .filters, AyuStrings.filters.text(ru)),
++            link(3, .interface, ru ? "Интерфейс и чаты" : "Interface & Chats"),
+             .badgedLink(3, AyuGramRow.nearbyContact.rawValue, icons[.nearbyContact] ?? nil, AyuStrings.nearbyContact.text(ru), "BETA", 0xFFD60A),
+             .header(4, 30, AyuStrings.links.text(ru)),
+             link(4, .channel, AyuStrings.channel.text(ru), "@neosay1337"),
 diff --git a/submodules/SettingsUI/Sources/AyuSettingsController.swift b/submodules/SettingsUI/Sources/AyuSettingsController.swift
 index f41ddcf..c8567d6 100644
 --- a/submodules/SettingsUI/Sources/AyuSettingsController.swift
@@ -181,7 +220,7 @@ index 86b4e0d..326c986 100644
 +    }
 +}
 diff --git a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift b/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
-index bbac667..80857a6 100644
+index bbac667..b6a6358 100644
 --- a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
 +++ b/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
 @@ -1052,6 +1052,7 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
@@ -192,7 +231,7 @@ index bbac667..80857a6 100644
                      for (_, file) in inlineStickers {
                          transaction.storeMediaIfNotPresent(media: file)
                      }
-@@ -1133,7 +1134,30 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
+@@ -1133,7 +1134,32 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
                                  }
                              }
                          }
@@ -201,7 +240,9 @@ index bbac667..80857a6 100644
 +                            let ayuAuthorTitle = replyMessage.author?.debugDisplayTitle ?? "Deleted Message"
 +                            let ayuQuoteRaw = replyToMessageId.quote?.text ?? replyMessage.text
 +                            let ayuQuoteText = ayuQuoteRaw.count > 100 ? String(ayuQuoteRaw.prefix(100)) + "…" : ayuQuoteRaw
-+                            let pseudoPrefix = "\(ayuAuthorTitle):\n\(ayuQuoteText)\n\n"
++                            let quoteBody = "\(ayuAuthorTitle):\n\(ayuQuoteText)"
++                            let quoteUtf16Length = quoteBody.utf16.count
++                            let pseudoPrefix = quoteBody + "\n"
 +                            let prefixUtf16Length = pseudoPrefix.utf16.count
 +                            let authorUtf16Length = ayuAuthorTitle.utf16.count
 +                            var updatedEntities: [MessageTextEntity] = []
@@ -210,7 +251,7 @@ index bbac667..80857a6 100644
 +                                    updatedEntities.append(MessageTextEntity(range: (entity.range.lowerBound + prefixUtf16Length) ..< (entity.range.upperBound + prefixUtf16Length), type: entity.type))
 +                                }
 +                            }
-+                            updatedEntities.insert(MessageTextEntity(range: 0 ..< prefixUtf16Length, type: .BlockQuote(isCollapsed: false)), at: 0)
++                            updatedEntities.insert(MessageTextEntity(range: 0 ..< quoteUtf16Length, type: .BlockQuote(isCollapsed: false)), at: 0)
 +                            updatedEntities.insert(MessageTextEntity(range: 0 ..< authorUtf16Length, type: .Bold), at: 1)
 +                            attributes.removeAll(where: { $0 is TextEntitiesMessageAttribute })
 +                            attributes.append(TextEntitiesMessageAttribute(entities: updatedEntities))
@@ -225,7 +266,7 @@ index bbac667..80857a6 100644
                      if let replyToStoryId = replyToStoryId {
                          attributes.append(ReplyStoryAttribute(storyId: replyToStoryId))
 diff --git a/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleComponent.swift b/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleComponent.swift
-index eadd3a1..e7ccf5d 100644
+index eadd3a1..85b7b82 100644
 --- a/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleComponent.swift
 +++ b/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleComponent.swift
 @@ -14,6 +14,7 @@ import TelegramStringFormatting
@@ -236,17 +277,18 @@ index eadd3a1..e7ccf5d 100644
  
  /// The pill's labels as an expansion borrows them: frames in the content container's coordinates, and the colours they
  /// are drawn in.
-@@ -656,6 +657,9 @@ public final class ChatTitleComponent: Component {
+@@ -656,6 +657,10 @@ public final class ChatTitleComponent: Component {
                              if peer.isVerified {
                                  titleCredibilityIcon = .verified
                              }
-+                            if case .none = titleCredibilityIcon, case .none = titleStatusIcon, component.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
++                            if !peer.isVerified && !peer.isScam && !peer.isFake, component.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
 +                                titleCredibilityIcon = .exteraSupporter
++                                titleStatusIcon = .none
 +                            }
                              if let verificationIconFileId = peer.verificationIconFileId {
                                  titleVerifiedIcon = .emojiStatus(PeerEmojiStatus(content: .emoji(fileId: verificationIconFileId), expirationDate: nil))
                              }
-@@ -1140,6 +1144,8 @@ public final class ChatTitleComponent: Component {
+@@ -1140,6 +1145,8 @@ public final class ChatTitleComponent: Component {
                      return .text(color: component.theme.chat.message.incoming.scamColor, string: component.strings.Message_FakeAccount.uppercased())
                  case .scam:
                      return .text(color: component.theme.chat.message.incoming.scamColor, string: component.strings.Message_ScamAccount.uppercased())
@@ -256,7 +298,7 @@ index eadd3a1..e7ccf5d 100644
                      return .animation(content: .customEmoji(fileId: emojiStatus.fileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: component.theme.list.mediaPlaceholderColor, themeColor: component.theme.list.itemAccentColor, loopMode: .count(2))
                  }
 diff --git a/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleView.swift b/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleView.swift
-index ecd7a3c..5bbea77 100644
+index ecd7a3c..c2bd1e8 100644
 --- a/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleView.swift
 +++ b/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleView.swift
 @@ -18,6 +18,7 @@ import AccountContext
@@ -275,17 +317,18 @@ index ecd7a3c..5bbea77 100644
      case emojiStatus(PeerEmojiStatus)
  }
  
-@@ -317,6 +319,9 @@ public final class ChatTitleView: UIView, NavigationBarTitleView {
+@@ -317,6 +319,10 @@ public final class ChatTitleView: UIView, NavigationBarTitleView {
                                      if peer.isVerified {
                                          titleCredibilityIcon = .verified
                                      }
-+                                    if case .none = titleCredibilityIcon, case .none = titleStatusIcon, self.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
++                                    if !peer.isVerified && !peer.isScam && !peer.isFake, self.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
 +                                        titleCredibilityIcon = .exteraSupporter
++                                        titleStatusIcon = .none
 +                                    }
                                      if let verificationIconFileId = peer.verificationIconFileId {
                                          titleVerifiedIcon = .emojiStatus(PeerEmojiStatus(content: .emoji(fileId: verificationIconFileId), expirationDate: nil))
                                      }
-@@ -904,6 +909,8 @@ public final class ChatTitleView: UIView, NavigationBarTitleView {
+@@ -904,6 +910,8 @@ public final class ChatTitleView: UIView, NavigationBarTitleView {
              titleCredibilityContent = .text(color: self.theme.chat.message.incoming.scamColor, string: self.strings.Message_FakeAccount.uppercased())
          case .scam:
              titleCredibilityContent = .text(color: self.theme.chat.message.incoming.scamColor, string: self.strings.Message_ScamAccount.uppercased())
@@ -294,7 +337,7 @@ index ecd7a3c..5bbea77 100644
          case let .emojiStatus(emojiStatus):
              titleCredibilityContent = .animation(content: .customEmoji(fileId: emojiStatus.fileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: self.theme.list.mediaPlaceholderColor, themeColor: self.theme.list.itemAccentColor, loopMode: .count(2))
          }
-@@ -920,6 +927,8 @@ public final class ChatTitleView: UIView, NavigationBarTitleView {
+@@ -920,6 +928,8 @@ public final class ChatTitleView: UIView, NavigationBarTitleView {
              titleVerifiedContent = .text(color: self.theme.chat.message.incoming.scamColor, string: self.strings.Message_FakeAccount.uppercased())
          case .scam:
              titleVerifiedContent = .text(color: self.theme.chat.message.incoming.scamColor, string: self.strings.Message_ScamAccount.uppercased())
@@ -304,7 +347,7 @@ index ecd7a3c..5bbea77 100644
              titleVerifiedContent = .animation(content: .customEmoji(fileId: emojiStatus.fileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: self.theme.list.mediaPlaceholderColor, themeColor: self.theme.list.itemAccentColor, loopMode: .count(2))
          }
 diff --git a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoHeaderNode.swift b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoHeaderNode.swift
-index 0e6ead7..d7749ce 100644
+index 0e6ead7..2dd7c66 100644
 --- a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoHeaderNode.swift
 +++ b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoHeaderNode.swift
 @@ -531,6 +531,7 @@ final class PeerInfoHeaderNode: ASDisplayNode {
@@ -315,17 +358,18 @@ index 0e6ead7..d7749ce 100644
          case emojiStatus(PeerEmojiStatus)
      }
      
-@@ -690,6 +691,9 @@ final class PeerInfoHeaderNode: ASDisplayNode {
+@@ -690,6 +691,10 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                  if case .premium = credibilityIcon { credibilityIcon = .none }
              } else if case .none = statusIcon, case .none = credibilityIcon { credibilityIcon = .premium }
          }
-+        if case .none = credibilityIcon, case .none = statusIcon, let peerId = peer?.id, self.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peerId.id._internalGetInt64Value()) {
++        if let peer = peer, !peer.isVerified && !peer.isScam && !peer.isFake, self.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
 +            credibilityIcon = .exteraSupporter
++            statusIcon = .none
 +        }
  
          var isForum = false
          if case let .channel(channel) = peer, channel.isForumOrMonoForum {
-@@ -982,6 +986,9 @@ final class PeerInfoHeaderNode: ASDisplayNode {
+@@ -982,6 +987,9 @@ final class PeerInfoHeaderNode: ASDisplayNode {
              case .scam:
                  emojiRegularStatusContent = .text(color: presentationData.theme.chat.message.incoming.scamColor, string: presentationData.strings.Message_ScamAccount.uppercased())
                  emojiExpandedStatusContent = emojiRegularStatusContent
