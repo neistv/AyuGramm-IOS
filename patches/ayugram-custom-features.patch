@@ -181,7 +181,7 @@ index 86b4e0d..326c986 100644
 +    }
 +}
 diff --git a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift b/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
-index bbac667..77319a3 100644
+index bbac667..80857a6 100644
 --- a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
 +++ b/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
 @@ -1052,6 +1052,7 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
@@ -192,20 +192,18 @@ index bbac667..77319a3 100644
                      for (_, file) in inlineStickers {
                          transaction.storeMediaIfNotPresent(media: file)
                      }
-@@ -1133,7 +1134,36 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
+@@ -1133,7 +1134,30 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
                                  }
                              }
                          }
 -                        attributes.append(ReplyMessageAttribute(messageId: replyToMessageId.messageId, threadMessageId: threadMessageId, quote: quote, isQuote: isQuote, innerSubject: replyToMessageId.innerSubject))
-+                        var emitReplyAttribute = true
-+                        if let replyMessage = replyMessage, replyMessage.attributes.contains(where: { $0 is AyuDeletedMessageAttribute }) {
++                        if let replyMessage = transaction.getMessage(replyToMessageId.messageId), replyMessage.attributes.contains(where: { $0 is AyuDeletedMessageAttribute }) {
 +                            let ayuAuthorTitle = replyMessage.author?.debugDisplayTitle ?? "Deleted Message"
-+                            let ayuRawQuote = quote?.text ?? replyMessage.text
-+                            let ayuQuoteText = ayuRawQuote.count > 100 ? String(ayuRawQuote.prefix(100)) + "…" : ayuRawQuote
++                            let ayuQuoteRaw = replyToMessageId.quote?.text ?? replyMessage.text
++                            let ayuQuoteText = ayuQuoteRaw.count > 100 ? String(ayuQuoteRaw.prefix(100)) + "…" : ayuQuoteRaw
 +                            let pseudoPrefix = "\(ayuAuthorTitle):\n\(ayuQuoteText)\n\n"
 +                            let prefixUtf16Length = pseudoPrefix.utf16.count
 +                            let authorUtf16Length = ayuAuthorTitle.utf16.count
-+                            
 +                            var updatedEntities: [MessageTextEntity] = []
 +                            if let existing = requestedAttributes.first(where: { $0 is TextEntitiesMessageAttribute }) as? TextEntitiesMessageAttribute {
 +                                for entity in existing.entities {
@@ -214,17 +212,13 @@ index bbac667..77319a3 100644
 +                            }
 +                            updatedEntities.insert(MessageTextEntity(range: 0 ..< prefixUtf16Length, type: .BlockQuote(isCollapsed: false)), at: 0)
 +                            updatedEntities.insert(MessageTextEntity(range: 0 ..< authorUtf16Length, type: .Bold), at: 1)
-+                            
 +                            attributes.removeAll(where: { $0 is TextEntitiesMessageAttribute })
 +                            attributes.append(TextEntitiesMessageAttribute(entities: updatedEntities))
 +                            text = pseudoPrefix + text
-+                            
 +                            if let threadMessageId = threadMessageId {
 +                                attributes.append(ReplyMessageAttribute(messageId: threadMessageId, threadMessageId: nil, quote: nil, isQuote: false, innerSubject: nil))
 +                            }
-+                            emitReplyAttribute = false
-+                        }
-+                        if emitReplyAttribute {
++                        } else {
 +                            attributes.append(ReplyMessageAttribute(messageId: replyToMessageId.messageId, threadMessageId: threadMessageId, quote: quote, isQuote: isQuote, innerSubject: replyToMessageId.innerSubject))
 +                        }
                      }
