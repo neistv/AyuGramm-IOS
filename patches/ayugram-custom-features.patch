@@ -113,6 +113,7 @@ index f41ddcffe0..c8567d681b 100644
 +                case 26: $0.interface.autoQuoteReplies = value
 +                case 27: $0.interface.replyToDeletedMessages = value
 +                case 28: $0.interface.showSupporterBadges = value
++                case 35: $0.interface.supporterBadgesOnLeft = value
                  case 31: $0.interface.spoofWebAppAsAndroid = value
                  case 32: $0.interface.streamerMode = value
                  case 33: $0.interface.backgroundNotifications = value
@@ -123,6 +124,7 @@ index f41ddcffe0..c8567d681b 100644
 +        26: icon("quote.bubble.fill", 0x5856D6),
 +        27: icon("arrowshape.turn.up.left.fill", 0x34C759),
 +        28: icon("paperplane.fill", 0x007AFF),
++        35: icon("arrow.left.arrow.right", 0x5856D6),
          31: icon("square.grid.2x2.fill", 0x32ADE6),
          32: icon("video.slash.fill", 0xFF3B30),
          33: icon("bell.badge.fill", 0xFF9500)
@@ -134,6 +136,7 @@ index f41ddcffe0..c8567d681b 100644
 +            .toggle(2, 26, icons[26] ?? nil, ru ? "Ответ цитатой по умолчанию" : "Auto-quote replies by default", nil, value.autoQuoteReplies),
 +            .toggle(2, 27, icons[27] ?? nil, ru ? "Ответ на удалённые сообщения" : "Reply to deleted messages", nil, value.replyToDeletedMessages),
 +            .toggle(2, 28, icons[28] ?? nil, ru ? "Бейджи спонсоров exteraGram" : "exteraGram Supporter Badges", nil, value.showSupporterBadges),
++            .toggle(2, 35, icons[35] ?? nil, ru ? "Бейдж слева от имени" : "Badge before name", ru ? "Выключено — справа от имени" : "Off — after name", value.supporterBadgesOnLeft),
 +            .info(2, 29, ru ? "Ответ на удалённое сообщение автоматически оформляется в псевдо-цитату с именем автора, предотвращая ошибку сервера." : "Replying to deleted messages creates a pseudo-quote with author header, bypassing server errors."),
              .header(3, 30, AyuStrings.other2.text(ru)),
              .toggle(3, 31, icons[31] ?? nil, AyuStrings.miniAppsAsAndroid.text(ru), nil, value.spoofWebAppAsAndroid),
@@ -149,6 +152,7 @@ index 86b4e0dcb3..6eeb1f6bee 100644
 +    public var autoQuoteReplies = true
 +    public var replyToDeletedMessages = true
 +    public var showSupporterBadges = true
++    public var supporterBadgesOnLeft = false
      public init() {}
  
      private enum CodingKeys: String, CodingKey {
@@ -157,6 +161,7 @@ index 86b4e0dcb3..6eeb1f6bee 100644
          case hideStickerTime, disableJumpToNextChannel, hideKeyboardOnScroll, addCommaAfterMention
          case horizonLockVideoMessages
 +        case autoQuoteReplies, replyToDeletedMessages, showSupporterBadges
++        case supporterBadgesOnLeft
      }
      public init(from decoder: Decoder) throws {
          let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -167,6 +172,7 @@ index 86b4e0dcb3..6eeb1f6bee 100644
 +        self.autoQuoteReplies = try values.decodeIfPresent(Bool.self, forKey: .autoQuoteReplies) ?? true
 +        self.replyToDeletedMessages = try values.decodeIfPresent(Bool.self, forKey: .replyToDeletedMessages) ?? true
 +        self.showSupporterBadges = try values.decodeIfPresent(Bool.self, forKey: .showSupporterBadges) ?? true
++        self.supporterBadgesOnLeft = try values.decodeIfPresent(Bool.self, forKey: .supporterBadgesOnLeft) ?? false
      }
  }
  

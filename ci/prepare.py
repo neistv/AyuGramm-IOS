@@ -23,8 +23,8 @@ patches = [
     root / "patches" / "ayugram-developer-badges.patch",
 ]
 for patch in patches:
-    subprocess.run(["git", "apply", "--check", str(patch)], cwd=source, check=True)
-    subprocess.run(["git", "apply", str(patch)], cwd=source, check=True)
+    subprocess.run(["git", "apply", "--recount", "--check", str(patch)], cwd=source, check=True)
+    subprocess.run(["git", "apply", "--recount", str(patch)], cwd=source, check=True)
 
 badge_src = root / "assets" / "branding" / "ExteraBadge.imageset"
 if badge_src.is_dir():
