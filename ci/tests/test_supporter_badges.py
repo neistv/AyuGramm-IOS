@@ -65,6 +65,8 @@ class SupporterBadgeTests(unittest.TestCase):
         self.assertGreater(slider_handler, interface_controller)
         self.assertEqual(material_controller, -1)
         self.assertIn("+        var entries: [AyuSectionedEntry]", patch)
+        self.assertIn("let remainingEntries: [AyuSectionedEntry]", patch)
+        self.assertIn("entries.append(contentsOf: remainingEntries)", patch)
         self.assertIn("minimumValue: minimumValue, maximumValue: maximumValue", patch)
         self.assertIn("raw.githubusercontent.com/neistv/AyuGramm-IOS/main/assets/ayugram_ios_badges.json", patch)
 
