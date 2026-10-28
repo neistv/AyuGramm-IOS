@@ -1,6 +1,6 @@
 # OTA plugin adapters
 
-The API 7 base IPA adds **Settings → AyuGram → Plugins → Update plugin list**.
+The API 7 base IPA adds **Settings → exteraGram → Plugins → ⟳ next to +**.
 After that one base installation, publishing another supported native adapter in
 this directory does not require rebuilding or reinstalling the IPA.
 
@@ -50,3 +50,13 @@ Failed downloads/signatures/validation/writes keep the previous catalog. Older
 revisions and conflicting contents under the same revision are rejected. The
 client reports entries that require a newer app API. A new adapter for a changed
 source file must use that changed file's exact hash.
+
+Current supplied-plugin compatibility and device OTA test: [Russian batch report](../docs/PLUGIN_BATCH_STATUS_RU.md).
+
+## Engine API 8
+
+The updated base IPA adds native Group Mentions, configurable Reactions Total and a partial petpet GIF composer, and raises the installed-plugin cap to 64. Their catalog manifests declare API 8. Existing API 7 clients keep their previous seven entries and report these three as requiring a newer app. The remaining plugins in the batch are not implemented yet. See [the engine update notes](../docs/PLUGIN_ENGINE8_RU.md) for usage and exact limitations.
+
+## Engine API 9
+
+Adds `formattedCopy` (new native capability, minimum API 9) and native author/date/media filters in the Search+ UI. The existing `searchTerms` adapter remains backward compatible: older base apps keep basic search, API 9 apps get the new controls. Catalog revision 6 has 11 entries, of which API 8 can use 10 and API 7 can use 7. [Usage and limits](../docs/PLUGIN_ENGINE9_RU.md).

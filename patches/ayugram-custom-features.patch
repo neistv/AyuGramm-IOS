@@ -1,28 +1,39 @@
 diff --git a/submodules/SettingsUI/Sources/AyuSettingsController.swift b/submodules/SettingsUI/Sources/AyuSettingsController.swift
-index d5fc459..49a4a38 100644
+index f41ddcf..72a7fea 100644
 --- a/submodules/SettingsUI/Sources/AyuSettingsController.swift
 +++ b/submodules/SettingsUI/Sources/AyuSettingsController.swift
-@@ -685,6 +685,8 @@ private func ayuInterfaceSettingsController(context: AccountContext, contextMenu
-                 case 16: $0.interface.hideAllChatsFolder = value
-                 case 18: $0.interface.semiTransparentDeletedMessages = value
-                 case 19: $0.interface.backgroundNotifications = value
-+                case 21: $0.interface.autoQuoteReplies = value
-+                case 22: $0.interface.replyToDeletedMessages = value
-                 default: break
-                 }
-             }
-@@ -727,6 +729,9 @@ private func ayuInterfaceSettingsController(context: AccountContext, contextMenu
-             .info(17, ru ? "Режим стримера убирает окно AyuGram со скриншотов, записи экрана и трансляций, как секретные чаты; на самом телефоне всё видно, клавиатура системная и не скрывается. «Все чаты» скрываются, только если есть хотя бы одна папка; открывается первая папка. Применяется при следующем обновлении папок или после перезапуска." : "Streamer mode leaves the AyuGram window out of screenshots, screen recordings and streams, like secret chats; the phone itself still shows everything and the system keyboard is not hidden. All Chats is hidden only while at least one folder exists; the first folder opens. Applies on the next folder update or after a restart."),
-             .toggle(18, ru ? "Полупрозрачные удалённые сообщения" : "Semi-transparent deleted messages", value.semiTransparentDeletedMessages),
-             .toggle(19, ru ? "Уведомления в фоне" : "Background notifications", value.backgroundNotifications),
-+            .toggle(21, ru ? "Ответ цитатой по умолчанию" : "Auto-quote replies by default", value.autoQuoteReplies),
-+            .toggle(22, ru ? "Ответ на удалённые сообщения" : "Reply to deleted messages", value.replyToDeletedMessages),
-+            .info(23, ru ? "«Ответ цитатой» автоматически вставляет цитату при ответе. «Ответ на удалённые» оформляет ответ как красивую псевдо-цитату (как в AyuGramDesktop), предотвращая ошибку сервера." : "Auto-quote automatically inserts a quote when replying. Reply to deleted formats a pseudo-quote block (like AyuGramDesktop) preventing server errors."),
-             .info(20, ru ? "Истории, похожие каналы и приветственный стикер применяются при следующем открытии списка чатов или чата (надёжнее всего — после перезапуска). Скрытые истории не отмечаются просмотренными. Счётчики заменяются точкой. Спойлеры и zalgo-фильтр работают для текста сообщений. Предупреждение остаётся для ссылок с поддельным адресом и прокси. «Больше недавних стикеров» хранит до 200 вместо 20 на этом устройстве. Мини-приложения получают платформу android вместо ios." : "Stories, similar channels and the greeting sticker apply the next time the chat list or a chat opens (most reliably after a restart). Hidden stories are not marked as viewed. Counters become a dot. Spoilers and the zalgo filter apply to message text. The warning stays for links with a disguised host and for proxies. Unlimited recent stickers keeps up to 200 instead of 20 on this device. Mini apps receive the android platform instead of ios."),
-             .info(30, ru ? "Нажатие на ID копирует его. Счётчик меняется только на вкладке «Чаты»; состояние прочтения сохраняется. Быстрая пересылка скрывается возле обычных пузырьков, а комментарии и рекламные действия остаются доступны. MessageShot находится в меню сообщения и в действиях «Поделиться» для выбранных сообщений." : "Tap a profile ID to copy it. The badge setting affects the Chats tab and preserves read state. Quick-share hiding applies to ordinary bubbles; comment and sponsored-message actions remain available. MessageShot appears in the message menu and selected-message Share choices.")
-         ]
+@@ -578,6 +578,8 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
+                 case 23: $0.interface.disableGreetingSticker = value
+                 case 24: $0.interface.disableOpenLinkWarning = value
+                 case 25: $0.interface.unlimitedRecentStickers = value
++                case 26: $0.interface.autoQuoteReplies = value
++                case 27: $0.interface.replyToDeletedMessages = value
+                 case 31: $0.interface.spoofWebAppAsAndroid = value
+                 case 32: $0.interface.streamerMode = value
+                 case 33: $0.interface.backgroundNotifications = value
+@@ -605,6 +607,8 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
+         23: icon("hand.wave.fill", 0xFFCC00),
+         24: icon("link", 0x007AFF),
+         25: icon("clock.arrow.circlepath", 0x34C759),
++        26: icon("quote.bubble.fill", 0x5856D6),
++        27: icon("arrowshape.turn.up.left.fill", 0x34C759),
+         31: icon("square.grid.2x2.fill", 0x32ADE6),
+         32: icon("video.slash.fill", 0xFF3B30),
+         33: icon("bell.badge.fill", 0xFF9500)
+@@ -635,7 +639,10 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
+             .toggle(2, 23, icons[23] ?? nil, AyuStrings.noGreetingSticker.text(ru), nil, value.disableGreetingSticker),
+             .toggle(2, 24, icons[24] ?? nil, AyuStrings.openLinksWithoutAsking.text(ru), nil, value.disableOpenLinkWarning),
+             .toggle(2, 25, icons[25] ?? nil, AyuStrings.moreRecentStickers.text(ru), nil, value.unlimitedRecentStickers),
+-            .info(2, 26, AyuStrings.suspiciousLinksStillAskUp200.text(ru)),
++            .toggle(2, 26, icons[26] ?? nil, ru ? "Ответ цитатой по умолчанию" : "Auto-quote replies by default", nil, value.autoQuoteReplies),
++            .toggle(2, 27, icons[27] ?? nil, ru ? "Ответ на удалённые сообщения" : "Reply to deleted messages", nil, value.replyToDeletedMessages),
++            .info(2, 28, ru ? "При ответе на удалённое сообщение вставляется псевдо-цитата (AyuGramDesktop), предотвращая ошибку сервера." : "Replying to a deleted message inserts a pseudo-quote (AyuGramDesktop), preventing server errors."),
++            .info(2, 29, AyuStrings.suspiciousLinksStillAskUp200.text(ru)),
+             .header(3, 30, AyuStrings.other2.text(ru)),
+             .toggle(3, 31, icons[31] ?? nil, AyuStrings.miniAppsAsAndroid.text(ru), nil, value.spoofWebAppAsAndroid),
+             .toggle(3, 32, icons[32] ?? nil, AyuStrings.streamerMode.text(ru), nil, value.streamerMode),
 diff --git a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift b/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
-index eb08124..da23162 100644
+index 86b4e0d..388aa34 100644
 --- a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
 +++ b/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
 @@ -15,6 +15,8 @@ public struct AyuInterfaceSettings: Codable, Equatable {
@@ -34,7 +45,7 @@ index eb08124..da23162 100644
      // Desktop-parity display options (all off by default).
      public var hideStories = false
      public var hideSimilarChannels = false
-@@ -48,6 +50,7 @@ public struct AyuInterfaceSettings: Codable, Equatable {
+@@ -50,6 +52,7 @@ public struct AyuInterfaceSettings: Codable, Equatable {
          case showAddFilter
          case showRepeatText, showSearchPhrase, showCopyMessageIds
          case showHideMessage
@@ -42,7 +53,7 @@ index eb08124..da23162 100644
          case hideStories, hideSimilarChannels, hidePremiumStatuses, hideUnreadCounters, revealSpoilers
          case disableGreetingSticker, disableOpenLinkWarning, filterZalgo, spoofWebAppAsAndroid, unlimitedRecentStickers, streamerMode, hideAllChatsFolder, semiTransparentDeletedMessages, backgroundNotifications
          case disableNumberRounding, hidePhoneNumber, disableUnarchiveSwipe
-@@ -69,6 +72,8 @@ public struct AyuInterfaceSettings: Codable, Equatable {
+@@ -72,6 +75,8 @@ public struct AyuInterfaceSettings: Codable, Equatable {
          self.showSearchPhrase = try values.decodeIfPresent(Bool.self, forKey: .showSearchPhrase) ?? true
          self.showCopyMessageIds = try values.decodeIfPresent(Bool.self, forKey: .showCopyMessageIds) ?? true
          self.showHideMessage = try values.decodeIfPresent(Bool.self, forKey: .showHideMessage) ?? true
@@ -52,10 +63,10 @@ index eb08124..da23162 100644
          self.hideSimilarChannels = try values.decodeIfPresent(Bool.self, forKey: .hideSimilarChannels) ?? false
          self.hidePremiumStatuses = try values.decodeIfPresent(Bool.self, forKey: .hidePremiumStatuses) ?? false
 diff --git a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift b/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
-index dd44377..65c7a2b 100644
+index bbac667..f0ce48d 100644
 --- a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
 +++ b/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
-@@ -1034,6 +1034,7 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
+@@ -1052,6 +1052,7 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
              
              switch message {
                  case let .message(text, requestedAttributes, inlineStickers, mediaReference, threadId, replyToMessageId, replyToStoryId, localGroupingKey, _, _):
@@ -63,7 +74,7 @@ index dd44377..65c7a2b 100644
                      for (_, file) in inlineStickers {
                          transaction.storeMediaIfNotPresent(media: file)
                      }
-@@ -1091,10 +1092,21 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
+@@ -1109,10 +1110,21 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
                          var threadMessageId: MessageId?
                          var quote = replyToMessageId.quote
                          let isQuote = quote != nil
@@ -85,7 +96,7 @@ index dd44377..65c7a2b 100644
                              if quote == nil, replyToMessageId.messageId.peerId != peerId {
                                  let nsText = replyMessage.text as NSString
                                  var replyMedia: Media?
-@@ -1115,7 +1127,33 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
+@@ -1133,7 +1145,33 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
                                  }
                              }
                          }
@@ -158,7 +169,7 @@ index 17f21b6..66d61fd 100644
                                  ))
                              }).updatedReplyMessage(message).updatedSearch(nil).updatedShowCommands(false) }, completion: { t in
 diff --git a/submodules/TelegramUI/Sources/ChatInterfaceStateContextMenus.swift b/submodules/TelegramUI/Sources/ChatInterfaceStateContextMenus.swift
-index 5971ffd..ea5bdb2 100644
+index 09a9b43..99a31b6 100644
 --- a/submodules/TelegramUI/Sources/ChatInterfaceStateContextMenus.swift
 +++ b/submodules/TelegramUI/Sources/ChatInterfaceStateContextMenus.swift
 @@ -829,7 +829,9 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState

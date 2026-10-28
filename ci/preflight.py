@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 import plistlib
 import os
@@ -41,6 +42,10 @@ def main():
     parser.add_argument('source', type=Path)
     args = parser.parse_args()
     source = args.source.resolve()
+    import_check = source / "build-system/Make/PostboxImportCheck.py"
+    if import_check.exists():
+        subprocess.run([sys.executable, str(import_check), str(source)], check=True)
+        print("PASS: actual upstream Postbox import/access check before native dependencies")
     paths = set()
     for arguments in (['diff', '--name-only', '-z', 'HEAD'], ['ls-files', '--others', '--exclude-standard', '-z']):
         output = subprocess.check_output(['git', *arguments], cwd=source)
@@ -83,6 +88,7 @@ def main():
     # implementations before the expensive full Telegram build.
     sdk_sources = [source / 'submodules/TelegramUI/Sources' / name for name in (
         'Chat/AyuMessageShotCanvas.swift', 'AyuStartupStorage.swift', 'AyuStartupFailureController.swift')]
+    sdk_sources.append(source / 'submodules/Display/Source/AyuPetpetController.swift')
     sdk_sources.append(source / 'submodules/Display/Source/AyuPluginAvatar.swift')
     sdk_sources.append(source / 'submodules/Display/Source/AyuArcadeGameController.swift')
     sdk_sources.append(source / 'submodules/Display/Source/AyuChatColorPickerController.swift')
@@ -106,7 +112,7 @@ def main():
         if manager.exists():
             ayu = source / 'submodules/TelegramCore/Sources/AyuGram'
             models = [ayu / name for name in (
-                'AyuPythonRuntime.swift', 'AyuPluginCatalog.swift', 'AyuTextProgram.swift', 'AyuPlugins.swift', 'AyuAndroidPluginConverter.swift', 'AyuCameraFlipPolicy.swift', 'AyuChatColorSettings.swift', 'AyuAdvancedSettings.swift', 'AyuChatExportModels.swift', 'AyuTranslationRequest.swift', 'AyuGhostModeSettings.swift', 'AyuAppearanceSettings.swift',
+                'AyuPythonRuntime.swift', 'AyuNativeTextTools.swift', 'AyuReactionTotalSettings.swift', 'AyuGroupMentions.swift', 'AyuPluginCatalog.swift', 'AyuTextProgram.swift', 'AyuPlugins.swift', 'AyuAndroidPluginConverter.swift', 'AyuCameraFlipPolicy.swift', 'AyuChatColorSettings.swift', 'AyuAdvancedSettings.swift', 'AyuChatExportModels.swift', 'AyuTranslationRequest.swift', 'AyuGhostModeSettings.swift', 'AyuAppearanceSettings.swift',
                 'AyuMediaSendSettings.swift', 'AyuInterfaceSettings.swift', 'AyuMessageShotSettings.swift',
                 'AyuHiddenMessagesSettings.swift', 'AyuReactionDisplaySettings.swift', 'AyuRegexSettings.swift')]
             with tempfile.TemporaryDirectory(prefix='ayu-plugin-sdk-') as directory:
@@ -127,6 +133,7 @@ def main():
                     else:
                         result = subprocess.run([*flags, '-typecheck', '-I', directory, str(manager),
                                                  str(source / 'submodules/SettingsUI/Sources/AyuPluginDetailsController.swift'),
+                                                 str(source / 'submodules/SettingsUI/Sources/AyuGroupMentionsController.swift'),
                                                  str(source / 'submodules/SettingsUI/Sources/AyuPreferencesHubController.swift'),
                                                  str(source / 'submodules/TelegramUI/Components/VideoMessageCameraScreen/Sources/AyuCameraFlipGestureRecognizer.swift')], capture_output=True, text=True)
                         if result.returncode:

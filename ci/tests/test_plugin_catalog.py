@@ -65,3 +65,65 @@ class PluginCatalogTests(unittest.TestCase):
         sys.path.insert(0, str(ROOT / 'runtime/python'))
         from _ayu_converter import compile_source
         with self.assertRaises(ValueError): compile_source((ROOT / 'plugins/ota_lowercase_demo.plugin').read_text(encoding='utf-8'))
+
+    def test_supplied_batch_report_matches_published_catalog_without_placeholder_adapters(self):
+        report = json.loads((ROOT / 'docs/PLUGIN_BATCH_STATUS.json').read_text(encoding='utf-8'))
+        envelope = json.loads((ROOT / 'plugin-catalog/catalog.json').read_text(encoding='utf-8'))
+        payload = json.loads(base64.b64decode(envelope['payload']))
+        entries = {json.loads(base64.b64decode(item['manifestData']))['sourceSHA256']: json.loads(base64.b64decode(item['manifestData'])) for item in payload['adapters']}
+        self.assertEqual(len(report['plugins']), 29)
+        supported = [row for row in report['plugins'] if row['status'] == 'supported_native_adapter']
+        self.assertEqual(len(supported), 4)
+        for row in supported:
+            self.assertEqual(entries[row['sha256']]['id'], row['metadata']['__id__'])
+            self.assertEqual(native_manifest(entries[row['sha256']]), entries[row['sha256']])
+        for row in report['plugins']:
+            if row['status'] == 'requires_engine_update':
+                self.assertNotIn(row['sha256'], entries)
+                self.assertTrue(row['engine_work'])
+                self.assertTrue(row['note_ru'])
+
+    def test_fixed_signed_catalog_fixture_keeps_rollback_tests_independent_of_publication(self):
+        envelope = json.loads((ROOT / 'plugins/catalog_revision2.fixture.json').read_text(encoding='utf-8'))
+        payload = json.loads(base64.b64decode(envelope['payload']))
+        self.assertEqual(payload['revision'], 2)
+        self.assertEqual(len(payload['adapters']), 5)
+
+    def test_new_native_capabilities_publish_with_their_required_engine_api(self):
+        for kind in ('groupMentions', 'petpet', 'reactionsTotal'):
+            value = self.manifest()
+            value['actions'] = [{'id': 'native', 'title': 'Native', 'kind': kind}]
+            manifest = native_manifest(value)
+            self.assertEqual(manifest['apiVersion'], 8)
+            self.assertEqual(manifest['actions'][0]['kind'], kind)
+
+    def test_engine8_adapters_match_the_audited_sources_and_do_not_downgrade_the_abi(self):
+        report = json.loads((ROOT / 'docs/PLUGIN_BATCH_STATUS.json').read_text(encoding='utf-8'))
+        envelope = json.loads((ROOT / 'plugin-catalog/catalog.json').read_text(encoding='utf-8'))
+        payload = json.loads(base64.b64decode(envelope['payload']))
+        entries = {json.loads(base64.b64decode(item['manifestData']))['sourceSHA256']: json.loads(base64.b64decode(item['manifestData'])) for item in payload['adapters']}
+        new = [row for row in report['plugins'] if row['status'] in ('native_engine8', 'partial_engine8')]
+        self.assertEqual(len(new), 3)
+        for row in new:
+            manifest = entries[row['sha256']]
+            self.assertEqual(manifest['apiVersion'], 8)
+            self.assertEqual(manifest['id'], row['metadata']['__id__'])
+            self.assertEqual(native_manifest(manifest), manifest)
+
+    def test_formatted_copy_requires_engine9_while_existing_capabilities_keep_their_abi(self):
+        value = self.manifest()
+        value['actions'] = [{'id': 'copy', 'title': 'Copy with details', 'kind': 'formattedCopy'}]
+        manifest = native_manifest(value)
+        self.assertEqual(manifest['apiVersion'], 9)
+        self.assertEqual(manifest['actions'][0]['kind'], 'formattedCopy')
+
+    def test_production_formatted_copy_is_bound_to_the_original_source_and_engine9(self):
+        report = json.loads((ROOT / 'docs/PLUGIN_BATCH_STATUS.json').read_text(encoding='utf-8'))
+        row = next(row for row in report['plugins'] if row['metadata']['__id__'] == 'formatted_copy')
+        envelope = json.loads((ROOT / 'plugin-catalog/catalog.json').read_text(encoding='utf-8'))
+        payload = json.loads(base64.b64decode(envelope['payload']))
+        entries = [json.loads(base64.b64decode(item['manifestData'])) for item in payload['adapters']]
+        manifest = next(entry for entry in entries if entry['sourceSHA256'] == row['sha256'])
+        self.assertEqual(manifest['apiVersion'], 9)
+        self.assertEqual(manifest['actions'][0]['kind'], 'formattedCopy')
+        self.assertEqual(native_manifest(manifest), manifest)
