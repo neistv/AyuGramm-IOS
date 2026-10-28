@@ -2,10 +2,11 @@ diff --git a/submodules/SettingsUI/Sources/AyuSettingsController.swift b/submodu
 index c8567d681b..7e7a9ba716 100644
 --- a/submodules/SettingsUI/Sources/AyuSettingsController.swift
 +++ b/submodules/SettingsUI/Sources/AyuSettingsController.swift
-@@ -151,13 +151,20 @@ func ayuMaterialDesignController(context: AccountContext) -> ViewController {
-     let arguments = AyuSectionedArguments(open: { _ in }, toggle: { _, value in
-         AyuMaterialControls.setEnabledOnNextLaunch(value)
-         enabled.set(value)
+@@ -588,7 +588,14 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
+                 }
+             }
+         } catch { presentError?() }
+-    })
 +    }, slider: { id, value in
 +        guard id == 6 else { return }
 +        do {
@@ -13,17 +14,19 @@ index c8567d681b..7e7a9ba716 100644
 +                $0.interface.deletedMessageTransparency = min(99, max(25, value))
 +            }
 +        } catch { presentError?() }
-     })
-     let icon = AyuSettingsIcons.symbol("switch.2", color: UIColor(rgb: 0x6750A4))
-     let signal = combineLatest(context.sharedContext.presentationData, enabled.get())
-     |> deliverOnMainQueue
-     |> map { presentationData, value -> (ItemListControllerState, (ItemListNodeState, Any)) in
++    })
+     let icon: (String, UInt32) -> UIImage? = { name, color in
+         return AyuSettingsIcons.symbol(name, color: UIColor(rgb: color))
+     }
+@@ -620,7 +627,7 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
+     |> map { presentationData, settings -> (ItemListControllerState, (ItemListNodeState, Any)) in
          let ru = presentationData.strings.baseLanguageCode.hasPrefix("ru")
+         let value = settings.interface
 -        let entries: [AyuSectionedEntry] = [
 +        var entries: [AyuSectionedEntry] = [
-             .toggle(0, 1, icon, AyuStrings.materialDesignToggle.text(ru), nil, value),
-             .info(0, 2, AyuStrings.materialDesignInfo.text(ru))
-         ]
+             .header(0, 0, AyuStrings.profilesMessages.text(ru)),
+             .toggle(0, 1, icons[1] ?? nil, AyuStrings.showIdsProfiles.text(ru), nil, value.showPeerIds),
+             .toggle(0, 2, icons[2] ?? nil, AyuStrings.hideQuickShareButton.text(ru), nil, value.hideFastShare),
 @@ -627,7 +634,13 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
              .toggle(0, 3, icons[3] ?? nil, AyuStrings.hideChatsTabBadge.text(ru), nil, value.hideChatsBadge),
              .toggle(0, 4, icons[4] ?? nil, "MessageShot", nil, value.showMessageShot),
