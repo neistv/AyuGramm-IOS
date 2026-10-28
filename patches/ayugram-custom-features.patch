@@ -1,67 +1,226 @@
+diff --git a/submodules/ChatListUI/Sources/Node/ChatListItem.swift b/submodules/ChatListUI/Sources/Node/ChatListItem.swift
+index e41738b..cc89f89 100644
+--- a/submodules/ChatListUI/Sources/Node/ChatListItem.swift
++++ b/submodules/ChatListUI/Sources/Node/ChatListItem.swift
+@@ -3570,6 +3570,8 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
+                                 }
+                             } else if peer.isPremium && !premiumConfiguration.isPremiumDisabled {
+                                 currentCredibilityIconContent = .premium(color: item.presentationData.theme.list.itemAccentColor)
++                            } else if item.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
++                                currentCredibilityIconContent = .image(image: UIImage(bundleImageName: "AyuGram/ExteraBadge"), tintColor: item.presentationData.theme.list.itemAccentColor)
+                             }
+                             
+                             if peer.isVerified {
+@@ -3601,6 +3603,8 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
+                         }
+                     } else if peer.isPremium && !premiumConfiguration.isPremiumDisabled {
+                         currentCredibilityIconContent = .premium(color: item.presentationData.theme.list.itemAccentColor)
++                    } else if item.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
++                        currentCredibilityIconContent = .image(image: UIImage(bundleImageName: "AyuGram/ExteraBadge"), tintColor: item.presentationData.theme.list.itemAccentColor)
+                     }
+                     
+                     if peer.isVerified {
 diff --git a/submodules/SettingsUI/Sources/AyuSettingsController.swift b/submodules/SettingsUI/Sources/AyuSettingsController.swift
-index f41ddcf..72a7fea 100644
+index f41ddcf..90a379a 100644
 --- a/submodules/SettingsUI/Sources/AyuSettingsController.swift
 +++ b/submodules/SettingsUI/Sources/AyuSettingsController.swift
-@@ -578,6 +578,8 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
+@@ -578,6 +578,9 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
                  case 23: $0.interface.disableGreetingSticker = value
                  case 24: $0.interface.disableOpenLinkWarning = value
                  case 25: $0.interface.unlimitedRecentStickers = value
 +                case 26: $0.interface.autoQuoteReplies = value
 +                case 27: $0.interface.replyToDeletedMessages = value
++                case 28: $0.interface.showSupporterBadges = value
                  case 31: $0.interface.spoofWebAppAsAndroid = value
                  case 32: $0.interface.streamerMode = value
                  case 33: $0.interface.backgroundNotifications = value
-@@ -605,6 +607,8 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
+@@ -605,6 +608,9 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
          23: icon("hand.wave.fill", 0xFFCC00),
          24: icon("link", 0x007AFF),
          25: icon("clock.arrow.circlepath", 0x34C759),
 +        26: icon("quote.bubble.fill", 0x5856D6),
 +        27: icon("arrowshape.turn.up.left.fill", 0x34C759),
++        28: icon("paperplane.fill", 0x007AFF),
          31: icon("square.grid.2x2.fill", 0x32ADE6),
          32: icon("video.slash.fill", 0xFF3B30),
          33: icon("bell.badge.fill", 0xFF9500)
-@@ -635,7 +639,10 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
+@@ -635,7 +641,11 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
              .toggle(2, 23, icons[23] ?? nil, AyuStrings.noGreetingSticker.text(ru), nil, value.disableGreetingSticker),
              .toggle(2, 24, icons[24] ?? nil, AyuStrings.openLinksWithoutAsking.text(ru), nil, value.disableOpenLinkWarning),
              .toggle(2, 25, icons[25] ?? nil, AyuStrings.moreRecentStickers.text(ru), nil, value.unlimitedRecentStickers),
 -            .info(2, 26, AyuStrings.suspiciousLinksStillAskUp200.text(ru)),
 +            .toggle(2, 26, icons[26] ?? nil, ru ? "Ответ цитатой по умолчанию" : "Auto-quote replies by default", nil, value.autoQuoteReplies),
 +            .toggle(2, 27, icons[27] ?? nil, ru ? "Ответ на удалённые сообщения" : "Reply to deleted messages", nil, value.replyToDeletedMessages),
-+            .info(2, 28, ru ? "При ответе на удалённое сообщение вставляется псевдо-цитата (AyuGramDesktop), предотвращая ошибку сервера." : "Replying to a deleted message inserts a pseudo-quote (AyuGramDesktop), preventing server errors."),
-+            .info(2, 29, AyuStrings.suspiciousLinksStillAskUp200.text(ru)),
++            .toggle(2, 28, icons[28] ?? nil, ru ? "Бейджи спонсоров exteraGram" : "exteraGram Supporter Badges", nil, value.showSupporterBadges),
++            .info(2, 29, ru ? "При ответе на удалённое сообщение вставляется псевдо-цитата (AyuGramDesktop), предотвращая ошибку сервера." : "Replying to a deleted message inserts a pseudo-quote (AyuGramDesktop), preventing server errors."),
++            .info(2, 30, AyuStrings.suspiciousLinksStillAskUp200.text(ru)),
              .header(3, 30, AyuStrings.other2.text(ru)),
              .toggle(3, 31, icons[31] ?? nil, AyuStrings.miniAppsAsAndroid.text(ru), nil, value.spoofWebAppAsAndroid),
              .toggle(3, 32, icons[32] ?? nil, AyuStrings.streamerMode.text(ru), nil, value.streamerMode),
 diff --git a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift b/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
-index 86b4e0d..388aa34 100644
+index 86b4e0d..b44b8da 100644
 --- a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
 +++ b/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
-@@ -15,6 +15,8 @@ public struct AyuInterfaceSettings: Codable, Equatable {
+@@ -15,6 +15,9 @@ public struct AyuInterfaceSettings: Codable, Equatable {
      public var showSearchPhrase = true
      public var showCopyMessageIds = true
      public var showHideMessage = true
 +    public var autoQuoteReplies = true
 +    public var replyToDeletedMessages = true
++    public var showSupporterBadges = true
      // Desktop-parity display options (all off by default).
      public var hideStories = false
      public var hideSimilarChannels = false
-@@ -50,6 +52,7 @@ public struct AyuInterfaceSettings: Codable, Equatable {
+@@ -50,6 +53,7 @@ public struct AyuInterfaceSettings: Codable, Equatable {
          case showAddFilter
          case showRepeatText, showSearchPhrase, showCopyMessageIds
          case showHideMessage
-+        case autoQuoteReplies, replyToDeletedMessages
++        case autoQuoteReplies, replyToDeletedMessages, showSupporterBadges
          case hideStories, hideSimilarChannels, hidePremiumStatuses, hideUnreadCounters, revealSpoilers
          case disableGreetingSticker, disableOpenLinkWarning, filterZalgo, spoofWebAppAsAndroid, unlimitedRecentStickers, streamerMode, hideAllChatsFolder, semiTransparentDeletedMessages, backgroundNotifications
          case disableNumberRounding, hidePhoneNumber, disableUnarchiveSwipe
-@@ -72,6 +75,8 @@ public struct AyuInterfaceSettings: Codable, Equatable {
+@@ -72,6 +76,9 @@ public struct AyuInterfaceSettings: Codable, Equatable {
          self.showSearchPhrase = try values.decodeIfPresent(Bool.self, forKey: .showSearchPhrase) ?? true
          self.showCopyMessageIds = try values.decodeIfPresent(Bool.self, forKey: .showCopyMessageIds) ?? true
          self.showHideMessage = try values.decodeIfPresent(Bool.self, forKey: .showHideMessage) ?? true
 +        self.autoQuoteReplies = try values.decodeIfPresent(Bool.self, forKey: .autoQuoteReplies) ?? true
 +        self.replyToDeletedMessages = try values.decodeIfPresent(Bool.self, forKey: .replyToDeletedMessages) ?? true
++        self.showSupporterBadges = try values.decodeIfPresent(Bool.self, forKey: .showSupporterBadges) ?? true
          self.hideStories = try values.decodeIfPresent(Bool.self, forKey: .hideStories) ?? false
          self.hideSimilarChannels = try values.decodeIfPresent(Bool.self, forKey: .hideSimilarChannels) ?? false
          self.hidePremiumStatuses = try values.decodeIfPresent(Bool.self, forKey: .hidePremiumStatuses) ?? false
+@@ -109,3 +116,131 @@ public enum AyuPeerIdFormat {
+         }
+     }
+ }
++
++public final class AyuSupportersManager {
++    public static let shared = AyuSupportersManager()
++
++    private let lock = NSLock()
++    private var supporters: Set<Int64> = []
++    private var developers: Set<Int64> = [
++        749218, 139303278, 168769611, 668557709, 880708503, 963080346,
++        1282540315, 1348136086, 1374434073, 1752394339, 1773117711, 2135966128,
++        5079320635, 5118627360, 5184725450, 5330087923, 5800413909, 6007644928,
++        7380551229, 7738913005, 7818249287, 8083933640
++    ]
++    private var lastFetchTimestamp: TimeInterval = 0
++    private var isFetching = false
++
++    private init() {
++        self.loadFromDisk()
++        self.refreshIfNeeded()
++    }
++
++    public func isSupporter(peerId: Int64) -> Bool {
++        self.lock.lock()
++        defer { self.lock.unlock() }
++        return self.supporters.contains(peerId) || self.developers.contains(peerId)
++    }
++
++    public func isDeveloper(peerId: Int64) -> Bool {
++        self.lock.lock()
++        defer { self.lock.unlock() }
++        return self.developers.contains(peerId)
++    }
++
++    private var cacheFileURL: URL? {
++        guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
++            return nil
++        }
++        let dir = appSupport.appendingPathComponent("AyuGram", isDirectory: true)
++        if !FileManager.default.fileExists(atPath: dir.path) {
++            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
++        }
++        return dir.appendingPathComponent("supporters.json")
++    }
++
++    private func loadFromDisk() {
++        guard let url = self.cacheFileURL, let data = try? Data(contentsOf: url) else { return }
++        self.parsePayload(data: data)
++    }
++
++    private func saveToDisk(data: Data) {
++        guard let url = self.cacheFileURL else { return }
++        try? data.write(to: url, options: .atomic)
++    }
++
++    private func parsePayload(data: Data) {
++        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
++        var newSupporters = Set<Int64>()
++        if let list = json["supporters"] as? [Any] {
++            for item in list {
++                if let num = item as? NSNumber {
++                    newSupporters.insert(num.int64Value)
++                }
++            }
++        }
++        var newDevelopers = Set<Int64>()
++        if let list = json["developers"] as? [Any] {
++            for item in list {
++                if let num = item as? NSNumber {
++                    newDevelopers.insert(num.int64Value)
++                }
++            }
++        }
++
++        self.lock.lock()
++        if !newSupporters.isEmpty {
++            self.supporters = newSupporters
++        }
++        if !newDevelopers.isEmpty {
++            self.developers.formUnion(newDevelopers)
++        }
++        self.lock.unlock()
++    }
++
++    public func refreshIfNeeded() {
++        let now = Date().timeIntervalSince1970
++        self.lock.lock()
++        guard !self.isFetching && (now - self.lastFetchTimestamp > 3600.0) else {
++            self.lock.unlock()
++            return
++        }
++        self.isFetching = true
++        self.lock.unlock()
++
++        self.fetchFromURL(urlString: "https://update.ayugram.one/rc/current/desktop2") { [weak self] success in
++            if !success {
++                self?.fetchFromURL(urlString: "https://api.exteragram.app/api/v1/profiles/compact") { _ in
++                    self?.lock.lock()
++                    self?.isFetching = false
++                    self?.lastFetchTimestamp = Date().timeIntervalSince1970
++                    self?.lock.unlock()
++                }
++            } else {
++                self?.lock.lock()
++                self?.isFetching = false
++                self?.lastFetchTimestamp = Date().timeIntervalSince1970
++                self?.lock.unlock()
++            }
++        }
++    }
++
++    private func fetchFromURL(urlString: String, completion: @escaping (Bool) -> Void) {
++        guard let url = URL(string: urlString) else {
++            completion(false)
++            return
++        }
++        var request = URLRequest(url: url)
++        request.timeoutInterval = 15.0
++        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
++            guard let data = data, error == nil,
++                  let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
++                completion(false)
++                return
++            }
++            self?.parsePayload(data: data)
++            self?.saveToDisk(data: data)
++            completion(true)
++        }.resume()
++    }
++}
 diff --git a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift b/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
 index bbac667..f0ce48d 100644
 --- a/submodules/TelegramCore/Sources/PendingMessages/EnqueueMessage.swift
@@ -131,6 +290,75 @@ index bbac667..f0ce48d 100644
                      }
                      if let replyToStoryId = replyToStoryId {
                          attributes.append(ReplyStoryAttribute(storyId: replyToStoryId))
+diff --git a/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleView.swift b/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleView.swift
+index ecd7a3c..2441941 100644
+--- a/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleView.swift
++++ b/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleView.swift
+@@ -22,6 +22,7 @@ import MultiAnimationRenderer
+ import ComponentDisplayAdapters
+ import GlassBackgroundComponent
+ import AnimatedTextComponent
++import AppBundle
+ 
+ private let titleFont = Font.with(size: 17.0, design: .regular, weight: .semibold, traits: [.monospacedNumbers])
+ private let subtitleFont = Font.regular(13.0)
+@@ -177,6 +178,7 @@ enum ChatTitleCredibilityIcon: Equatable {
+     case verified
+     case premium
+     case emojiStatus(PeerEmojiStatus)
++    case exteraSupporter
+ }
+ 
+ public final class ChatTitleView: UIView, NavigationBarTitleView {
+@@ -312,6 +314,8 @@ public final class ChatTitleView: UIView, NavigationBarTitleView {
+                                         titleStatusIcon = .emojiStatus(emojiStatus)
+                                     } else if peer.isPremium && !premiumConfiguration.isPremiumDisabled {
+                                         titleCredibilityIcon = .premium
++                                    } else if self.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
++                                        titleCredibilityIcon = .exteraSupporter
+                                     }
+                                     
+                                     if peer.isVerified {
+@@ -904,6 +908,8 @@ public final class ChatTitleView: UIView, NavigationBarTitleView {
+             titleCredibilityContent = .text(color: self.theme.chat.message.incoming.scamColor, string: self.strings.Message_FakeAccount.uppercased())
+         case .scam:
+             titleCredibilityContent = .text(color: self.theme.chat.message.incoming.scamColor, string: self.strings.Message_ScamAccount.uppercased())
++        case .exteraSupporter:
++            titleCredibilityContent = .image(image: UIImage(bundleImageName: "AyuGram/ExteraBadge"), tintColor: self.theme.list.itemAccentColor)
+         case let .emojiStatus(emojiStatus):
+             titleCredibilityContent = .animation(content: .customEmoji(fileId: emojiStatus.fileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: self.theme.list.mediaPlaceholderColor, themeColor: self.theme.list.itemAccentColor, loopMode: .count(2))
+         }
+diff --git a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoHeaderNode.swift b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoHeaderNode.swift
+index fdc996c..e0bc537 100644
+--- a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoHeaderNode.swift
++++ b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoHeaderNode.swift
+@@ -532,6 +532,7 @@ final class PeerInfoHeaderNode: ASDisplayNode {
+         case fake
+         case scam
+         case emojiStatus(PeerEmojiStatus)
++        case exteraSupporter
+     }
+     
+     private var currentCredibilityIcon: CredibilityIcon?
+@@ -672,6 +673,8 @@ final class PeerInfoHeaderNode: ASDisplayNode {
+                 statusIcon = .emojiStatus(emojiStatus)
+             } else if peer.isPremium && !premiumConfiguration.isPremiumDisabled && (peer.id != self.context.account.peerId || self.isSettings || self.isMyProfile) {
+                 credibilityIcon = .premium
++            } else if self.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
++                credibilityIcon = .exteraSupporter
+             } else {
+                 credibilityIcon = .none
+             }
+@@ -974,6 +977,9 @@ final class PeerInfoHeaderNode: ASDisplayNode {
+             case .scam:
+                 emojiRegularStatusContent = .text(color: presentationData.theme.chat.message.incoming.scamColor, string: presentationData.strings.Message_ScamAccount.uppercased())
+                 emojiExpandedStatusContent = emojiRegularStatusContent
++            case .exteraSupporter:
++                emojiRegularStatusContent = .image(image: UIImage(bundleImageName: "AyuGram/ExteraBadge"), tintColor: navigationContentsAccentColor)
++                emojiExpandedStatusContent = emojiRegularStatusContent
+             case let .emojiStatus(emojiStatus):
+                 currentEmojiStatus = emojiStatus
+                 emojiRegularStatusContent = .animation(content: .customEmoji(fileId: emojiStatus.fileId), size: CGSize(width: 80.0, height: 80.0), placeholderColor: presentationData.theme.list.mediaPlaceholderColor, themeColor: navigationContentsAccentColor, loopMode: .forever)
 diff --git a/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift b/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift
 index 17f21b6..66d61fd 100644
 --- a/submodules/TelegramUI/Sources/Chat/ChatControllerLoadDisplayNode.swift

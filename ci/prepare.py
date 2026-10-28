@@ -24,6 +24,12 @@ for patch in patches:
     subprocess.run(["git", "apply", "--check", str(patch)], cwd=source, check=True)
     subprocess.run(["git", "apply", str(patch)], cwd=source, check=True)
 
+badge_src = root / "assets" / "branding" / "ExteraBadge.imageset"
+if badge_src.is_dir():
+    badge_dst = source / "submodules" / "TelegramUI" / "Images.xcassets" / "AyuGram" / "ExteraBadge.imageset"
+    badge_dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(badge_src, badge_dst, dirs_exist_ok=True)
+
 missing = missing_port_sources(source)
 if missing:
     raise SystemExit("Port patch is missing required native source files:\n" + "\n".join(missing))
