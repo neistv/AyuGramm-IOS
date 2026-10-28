@@ -402,7 +402,7 @@ index 0e6ead7..e1dcd4a 100644
                  currentEmojiStatus = emojiStatus
                  let ayuLoop = peer?.id != self.context.account.peerId || ayuCosmetics.localStatusFileId != emojiStatus.fileId || ayuCosmetics.animateLocalEmoji
 diff --git a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoProfileItems.swift b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoProfileItems.swift
-index 6680052..2d07e5b 100644
+index 6680052..6d72b48 100644
 --- a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoProfileItems.swift
 +++ b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoProfileItems.swift
 @@ -18,6 +18,91 @@ import PeerNameColorItem
@@ -475,7 +475,7 @@ index 6680052..2d07e5b 100644
 +    return "неизвестно"
 +}
 +
-+private func ayuPeerDcLocationString(peer: Peer?) -> String {
++private func ayuPeerDcLocationString(peer: EnginePeer?) -> String {
 +    guard let peer = peer else { return "DC Unknown" }
 +    var dcId: Int? = nil
 +    if let small = peer.smallProfileImage, let res = small.resource as? CloudPeerPhotoSizeMediaResource {
@@ -503,14 +503,14 @@ index 6680052..2d07e5b 100644
              }
 +
 +            let idText = "\(user.id.id._internalGetInt64Value())"
-+            let dcText = ayuPeerDcLocationString(peer: user)
++            let dcText = ayuPeerDcLocationString(peer: data.peer)
 +            let ru = presentationData.strings.baseLanguageCode.hasPrefix("ru")
 +            let regDateStr = ayuEstimatedRegistrationDate(userId: user.id.id._internalGetInt64Value())
 +            let regMessage: String
 +            if isMyProfile {
 +                regMessage = ru ? "Вы создали свой аккаунт примерно \(regDateStr)." : "You created your account approximately on \(regDateStr)."
 +            } else {
-+                let name = user.displayTitle(strings: presentationData.strings, displayOrder: presentationData.nameDisplayOrder)
++                let name = data.peer?.displayTitle(strings: presentationData.strings, displayOrder: presentationData.nameDisplayOrder) ?? ""
 +                regMessage = ru ? "\(name) создал(а) свой аккаунт примерно \(regDateStr)." : "\(name) created their account approximately on \(regDateStr)."
 +            }
 +            items[currentPeerInfoSection]!.append(
