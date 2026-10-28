@@ -59,6 +59,12 @@ class SupporterBadgeTests(unittest.TestCase):
         self.assertIn("deletedMessageTransparency", patch)
         self.assertIn("entries.append(.slider(0, 6", patch)
         self.assertIn("value.semiTransparentDeletedMessages", patch)
+        slider_handler = patch.index("}, slider: { id, value in")
+        interface_controller = patch.index("func ayuInterfacePageController")
+        material_controller = patch.find("func ayuMaterialDesignController")
+        self.assertGreater(slider_handler, interface_controller)
+        self.assertEqual(material_controller, -1)
+        self.assertIn("+        var entries: [AyuSectionedEntry]", patch)
         self.assertIn("minimumValue: minimumValue, maximumValue: maximumValue", patch)
         self.assertIn("raw.githubusercontent.com/neistv/AyuGramm-IOS/main/assets/ayugram_ios_badges.json", patch)
 
