@@ -24,6 +24,33 @@ index 8e2e4a6..e40bfca 100644
                      if let verificationIconFileId = peer.verificationIconFileId {
                          currentVerifiedIconContent = .animation(content: .customEmoji(fileId: verificationIconFileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: item.presentationData.theme.list.mediaPlaceholderColor, themeColor: item.presentationData.theme.list.itemAccentColor, loopMode: .count(0))
                      }
+diff --git a/submodules/Display/Source/DeviceMetrics.swift b/submodules/Display/Source/DeviceMetrics.swift
+index 7fa38a6..c2604c5 100644
+--- a/submodules/Display/Source/DeviceMetrics.swift
++++ b/submodules/Display/Source/DeviceMetrics.swift
+@@ -561,7 +561,7 @@ public enum DeviceMetrics: CaseIterable, Equatable {
+         case .iPhoneX, .iPhone12Mini, .iPhone13Mini:
+             return false
+         default:
+-            return self.hasTopNotch
++            return self.hasTopNotch || self.hasDynamicIsland
+         }
+     }
+ }
+diff --git a/submodules/Display/Source/WindowContent.swift b/submodules/Display/Source/WindowContent.swift
+index 8873fc6..2701414 100644
+--- a/submodules/Display/Source/WindowContent.swift
++++ b/submodules/Display/Source/WindowContent.swift
+@@ -1477,7 +1477,8 @@ public class Window1 {
+                 
+                 if let image = self.badgeView.image {
+                     self.updateBadgeVisibility()
+-                    self.badgeView.frame = CGRect(origin: CGPoint(x: floorToScreenPixels((self.windowLayout.size.width - image.size.width) / 2.0), y: 5.0), size: image.size)
++                    let badgeY: CGFloat = self.deviceMetrics.hasDynamicIsland ? 18.0 : 5.0
++                    self.badgeView.frame = CGRect(origin: CGPoint(x: floorToScreenPixels((self.windowLayout.size.width - image.size.width) / 2.0), y: badgeY), size: image.size)
+                 }
+             }
+         }
 diff --git a/submodules/SettingsUI/Sources/AyuGramSettingsController.swift b/submodules/SettingsUI/Sources/AyuGramSettingsController.swift
 index 786127b..4716128 100644
 --- a/submodules/SettingsUI/Sources/AyuGramSettingsController.swift

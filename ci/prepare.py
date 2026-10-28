@@ -30,6 +30,15 @@ if badge_src.is_dir():
     badge_dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(badge_src, badge_dst, dirs_exist_ok=True)
 
+app_badge_src = root / "assets" / "branding" / "AppBadge@3x.png"
+if app_badge_src.is_file():
+    app_badge_dst = source / "submodules" / "TelegramUI" / "Images.xcassets" / "Components" / "AppBadge.imageset" / "AppBadge@3x.png"
+    app_badge_dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(app_badge_src, app_badge_dst)
+    app_badge_2x = root / "assets" / "branding" / "AppBadge@2x.png"
+    if app_badge_2x.is_file():
+        shutil.copy2(app_badge_2x, app_badge_dst.parent / "AppBadge@2x.png")
+
 missing = missing_port_sources(source)
 if missing:
     raise SystemExit("Port patch is missing required native source files:\n" + "\n".join(missing))
