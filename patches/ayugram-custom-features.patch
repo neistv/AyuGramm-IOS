@@ -224,8 +224,39 @@ index bbac667..80857a6 100644
                      }
                      if let replyToStoryId = replyToStoryId {
                          attributes.append(ReplyStoryAttribute(storyId: replyToStoryId))
+diff --git a/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleComponent.swift b/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleComponent.swift
+index eadd3a1..e7ccf5d 100644
+--- a/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleComponent.swift
++++ b/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleComponent.swift
+@@ -14,6 +14,7 @@ import TelegramStringFormatting
+ import EmojiStatusComponent
+ import GlassBackgroundComponent
+ import NewsFeedSupport
++import AppBundle
+ 
+ /// The pill's labels as an expansion borrows them: frames in the content container's coordinates, and the colours they
+ /// are drawn in.
+@@ -656,6 +657,9 @@ public final class ChatTitleComponent: Component {
+                             if peer.isVerified {
+                                 titleCredibilityIcon = .verified
+                             }
++                            if case .none = titleCredibilityIcon, case .none = titleStatusIcon, component.context.account.network.ayuGhostMode.current.interface.showSupporterBadges && AyuSupportersManager.shared.isSupporter(peerId: peer.id.id._internalGetInt64Value()) {
++                                titleCredibilityIcon = .exteraSupporter
++                            }
+                             if let verificationIconFileId = peer.verificationIconFileId {
+                                 titleVerifiedIcon = .emojiStatus(PeerEmojiStatus(content: .emoji(fileId: verificationIconFileId), expirationDate: nil))
+                             }
+@@ -1140,6 +1144,8 @@ public final class ChatTitleComponent: Component {
+                     return .text(color: component.theme.chat.message.incoming.scamColor, string: component.strings.Message_FakeAccount.uppercased())
+                 case .scam:
+                     return .text(color: component.theme.chat.message.incoming.scamColor, string: component.strings.Message_ScamAccount.uppercased())
++                case .exteraSupporter:
++                    return .image(image: UIImage(bundleImageName: "AyuGram/ExteraBadge"), tintColor: component.theme.list.itemAccentColor)
+                 case let .emojiStatus(emojiStatus):
+                     return .animation(content: .customEmoji(fileId: emojiStatus.fileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: component.theme.list.mediaPlaceholderColor, themeColor: component.theme.list.itemAccentColor, loopMode: .count(2))
+                 }
 diff --git a/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleView.swift b/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleView.swift
-index ecd7a3c..4c0cd31 100644
+index ecd7a3c..5bbea77 100644
 --- a/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleView.swift
 +++ b/submodules/TelegramUI/Components/ChatTitleView/Sources/ChatTitleView.swift
 @@ -18,6 +18,7 @@ import AccountContext
@@ -262,6 +293,15 @@ index ecd7a3c..4c0cd31 100644
 +            titleCredibilityContent = .image(image: UIImage(bundleImageName: "AyuGram/ExteraBadge"), tintColor: self.theme.list.itemAccentColor)
          case let .emojiStatus(emojiStatus):
              titleCredibilityContent = .animation(content: .customEmoji(fileId: emojiStatus.fileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: self.theme.list.mediaPlaceholderColor, themeColor: self.theme.list.itemAccentColor, loopMode: .count(2))
+         }
+@@ -920,6 +927,8 @@ public final class ChatTitleView: UIView, NavigationBarTitleView {
+             titleVerifiedContent = .text(color: self.theme.chat.message.incoming.scamColor, string: self.strings.Message_FakeAccount.uppercased())
+         case .scam:
+             titleVerifiedContent = .text(color: self.theme.chat.message.incoming.scamColor, string: self.strings.Message_ScamAccount.uppercased())
++        case .exteraSupporter:
++            titleVerifiedContent = .none
+         case let .emojiStatus(emojiStatus):
+             titleVerifiedContent = .animation(content: .customEmoji(fileId: emojiStatus.fileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: self.theme.list.mediaPlaceholderColor, themeColor: self.theme.list.itemAccentColor, loopMode: .count(2))
          }
 diff --git a/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoHeaderNode.swift b/submodules/TelegramUI/Components/PeerInfo/PeerInfoScreen/Sources/PeerInfoHeaderNode.swift
 index 0e6ead7..d7749ce 100644
