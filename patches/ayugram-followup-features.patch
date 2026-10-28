@@ -37,17 +37,18 @@ index c8567d681b..7e7a9ba716 100644
 +            entries.append(.slider(0, 6, value.deletedMessageTransparency, 25, 99))
 +            entries.append(.info(0, 7, ru ? "Прозрачность удалённых: \(value.deletedMessageTransparency)%" : "Deleted message transparency: \(value.deletedMessageTransparency)%"))
 +        }
-+        entries.append(contentsOf: [
++        let remainingEntries: [AyuSectionedEntry] = [
 +            .info(0, 8, AyuStrings.tapIdProfileCopy.text(ru)),
              .header(1, 10, AyuStrings.chatList.text(ru)),
              .toggle(1, 11, icons[11] ?? nil, AyuStrings.hideStories.text(ru), nil, value.hideStories),
              .toggle(1, 12, icons[12] ?? nil, AyuStrings.hideSimilarChannels.text(ru), nil, value.hideSimilarChannels),
-@@ -650,7 +663,7 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
+@@ -650,7 +663,8 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
              .toggle(3, 32, icons[32] ?? nil, AyuStrings.streamerMode.text(ru), nil, value.streamerMode),
              .toggle(3, 33, icons[33] ?? nil, AyuStrings.backgroundNotifications.text(ru), nil, value.backgroundNotifications),
              .info(3, 34, AyuStrings.streamerModeKeepsAyugramOutScreenshots.text(ru))
 -        ]
-+        ])
++        ]
++        entries.append(contentsOf: remainingEntries)
          let data = ItemListPresentationData(presentationData)
          let state = ItemListControllerState(presentationData: data, title: .text(AyuStrings.interface.text(ru)), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
          return (state, (ItemListNodeState(presentationData: data, entries: entries, style: .blocks, animateChanges: false), arguments))
