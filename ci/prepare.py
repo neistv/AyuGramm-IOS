@@ -35,9 +35,6 @@ if app_badge_src.is_file():
     app_badge_dst = source / "submodules" / "TelegramUI" / "Images.xcassets" / "Components" / "AppBadge.imageset" / "AppBadge@3x.png"
     app_badge_dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(app_badge_src, app_badge_dst)
-    app_badge_2x = root / "assets" / "branding" / "AppBadge@2x.png"
-    if app_badge_2x.is_file():
-        shutil.copy2(app_badge_2x, app_badge_dst.parent / "AppBadge@2x.png")
 
 missing = missing_port_sources(source)
 if missing:
