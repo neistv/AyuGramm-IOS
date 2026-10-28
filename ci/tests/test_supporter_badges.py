@@ -47,6 +47,11 @@ class SupporterBadgeTests(unittest.TestCase):
         self.assertEqual(registry["version"], 1)
         self.assertEqual(len(ids), len(set(ids)))
         self.assertTrue(all(badge["documentId"] > 0 and badge["title"] for badge in badges))
+        by_id = {badge["id"]: badge for badge in badges}
+        self.assertEqual(by_id[8276132300]["documentId"], 5341356487631448969)
+        self.assertEqual(by_id[7556953433]["documentId"], 5208467231670812677)
+        self.assertEqual(by_id[7864640050]["documentId"], 5341356487631448969)
+        self.assertTrue(all("(name)" in by_id[user_id]["title"] for user_id in (8276132300, 7556953433, 7864640050)))
 
     def test_followup_patch_has_conditional_opacity_slider(self):
         patch = (ROOT / "patches" / "ayugram-followup-features.patch").read_text()
@@ -56,6 +61,15 @@ class SupporterBadgeTests(unittest.TestCase):
         self.assertIn("value.semiTransparentDeletedMessages", patch)
         self.assertIn("minimumValue: minimumValue, maximumValue: maximumValue", patch)
         self.assertIn("raw.githubusercontent.com/neistv/AyuGramm-IOS/main/assets/ayugram_ios_badges.json", patch)
+
+    def test_ios_developer_badges_use_the_leading_name_slot(self):
+        patch = (ROOT / "patches" / "ayugram-developer-badges.patch").read_text()
+
+        self.assertIn("case ayuDeveloper(documentId: Int64, text: String?)", patch)
+        self.assertIn("verifiedIcon = .ayuDeveloper", patch)
+        self.assertIn("titleVerifiedIcon = .emojiStatus", patch)
+        self.assertIn("currentVerifiedIconContent = .animation", patch)
+        self.assertIn('replacingOccurrences(of: "(name)"', patch)
 
 
 if __name__ == "__main__":
