@@ -42,10 +42,13 @@ index c8567d681b..7e7a9ba716 100644
              .header(1, 10, AyuStrings.chatList.text(ru)),
              .toggle(1, 11, icons[11] ?? nil, AyuStrings.hideStories.text(ru), nil, value.hideStories),
              .toggle(1, 12, icons[12] ?? nil, AyuStrings.hideSimilarChannels.text(ru), nil, value.hideSimilarChannels),
-@@ -650,7 +663,8 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
+@@ -650,10 +663,11 @@ func ayuInterfacePageController(context: AccountContext) -> ViewController {
              .toggle(3, 32, icons[32] ?? nil, AyuStrings.streamerMode.text(ru), nil, value.streamerMode),
              .toggle(3, 33, icons[33] ?? nil, AyuStrings.backgroundNotifications.text(ru), nil, value.backgroundNotifications),
-             .info(3, 34, AyuStrings.streamerModeKeepsAyugramOutScreenshots.text(ru))
+             .info(3, 34, AyuStrings.streamerModeKeepsAyugramOutScreenshots.text(ru)),
+             .header(4, 40, ru ? "Голосовые сообщения" : "Voice Messages"),
+             .toggle(4, 41, icons[41] ?? nil, ru ? "Плеер в стиле «Диктофона»" : "Voice Memos Style Player", nil, value.voiceMemosPlayer),
+             .info(4, 42, ru ? "Голосовые, открытые из панели воспроизведения, показываются с крупной волной, ±15 секунд и скоростью, как в «Диктофоне»." : "Voice messages opened from the playback bar show a large waveform, ±15 s skips and speed, like Voice Memos.")
 -        ]
 +        ]
 +        entries.append(contentsOf: remainingEntries)

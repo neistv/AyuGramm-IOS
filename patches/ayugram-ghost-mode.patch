@@ -70147,7 +70147,7 @@ new file mode 100644
 index 00000000..2c7a77ab
 --- /dev/null
 +++ b/submodules/SettingsUI/Sources/AyuHostedNavigationScreen.swift
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,139 @@
 +import Foundation
 +import UIKit
 +import Display
@@ -70213,6 +70213,13 @@ index 00000000..2c7a77ab
 +    override func viewDidAppear(_ animated: Bool) {
 +        super.viewDidAppear(animated)
 +        self.hosted.endAppearanceTransition()
++        // Start the file import from Telegram's lifecycle as well as UIKit's. Defer
++        // presentation until this navigation transition has finished unwinding.
++        DispatchQueue.main.async { [weak self] in
++            guard let self, self.viewIfLoaded?.window != nil,
++                  let plugins = self.hosted.topViewController as? AyuPluginManagerController else { return }
++            plugins.importPendingFile()
++        }
 +    }
 +
 +    override func viewWillDisappear(_ animated: Bool) {
@@ -71590,7 +71597,7 @@ new file mode 100644
 index 00000000..68765ad1
 --- /dev/null
 +++ b/submodules/SettingsUI/Sources/AyuPluginManagerController.swift
-@@ -0,0 +1,557 @@
+@@ -0,0 +1,565 @@
 +import Foundation
 +import UIKit
 +import UniformTypeIdentifiers
@@ -71839,7 +71846,15 @@ index 00000000..68765ad1
 +            self.didSetInitialScrollPosition = true
 +            self.tableView.setContentOffset(CGPoint(x: 0.0, y: -self.tableView.adjustedContentInset.top), animated: false)
 +        }
-+        if let initial = self.initialImport { self.initialImport = nil; self.readImport(initial.0, filename: initial.1) }
++        self.importPendingFile()
++    }
++    /// The Telegram host also calls this explicitly after its own appearance. Embedded
++    /// UIKit appearance forwarding is not a reliable trigger for opening an attachment.
++    /// Consume the request only when reading can start; duplicate callbacks are harmless.
++    func importPendingFile() {
++        guard !self.reading, !self.applying, let initial = self.initialImport else { return }
++        self.initialImport = nil
++        self.readImport(initial.0, filename: initial.1)
 +    }
 +    @objc private func done() {
 +        if let close = self.close { close() } else { self.dismiss(animated: true) }
