@@ -128,27 +128,29 @@ index a636043a4f..45e404aa6c 100644
          self.sectionId = sectionId
          self.updated = updated
      }
-@@ -103,9 +107,9 @@ class ThemeSettingsBrightnessItemNode: ListViewItemNode {
+@@ -103,10 +107,10 @@ class ThemeSettingsBrightnessItemNode: ListViewItemNode {
          sliderView.enablePanHandling = true
          sliderView.trackCornerRadius = 1.0
          sliderView.lineSize = 2.0
 -        sliderView.minimumValue = 0.0
 -        sliderView.startValue = 0.0
 -        sliderView.maximumValue = 100.0
-+        sliderView.minimumValue = CGFloat(self.item?.minimumValue ?? 0)
-+        sliderView.startValue = CGFloat(self.item?.minimumValue ?? 0)
-+        sliderView.maximumValue = CGFloat(self.item?.maximumValue ?? 100)
++        sliderView.minimumValue = 0.0
++        sliderView.startValue = 0.0
++        sliderView.maximumValue = CGFloat((self.item?.maximumValue ?? 100) - (self.item?.minimumValue ?? 0))
          sliderView.disablesInteractiveTransitionGestureRecognizer = true
          if let item = self.item, let params = self.layoutParams {
-             sliderView.value = CGFloat(item.value)
+-            sliderView.value = CGFloat(item.value)
++            sliderView.value = CGFloat(item.value - item.minimumValue)
+             sliderView.backgroundColor = item.theme.list.itemBlocksBackgroundColor
 @@ -213,15 +217,19 @@ class ThemeSettingsBrightnessItemNode: ListViewItemNode {
                      }
                      
                      if let sliderView = strongSelf.sliderView {
-+                        sliderView.minimumValue = CGFloat(item.minimumValue)
-+                        sliderView.startValue = CGFloat(item.minimumValue)
-+                        sliderView.maximumValue = CGFloat(item.maximumValue)
-+                        sliderView.value = CGFloat(item.value)
++                        sliderView.minimumValue = 0.0
++                        sliderView.startValue = 0.0
++                        sliderView.maximumValue = CGFloat(item.maximumValue - item.minimumValue)
++                        sliderView.value = CGFloat(item.value - item.minimumValue)
                          if themeUpdated {
                              sliderView.backgroundColor = item.theme.list.itemBlocksBackgroundColor
                              sliderView.backColor = item.theme.list.itemSecondaryTextColor
@@ -158,6 +160,15 @@ index a636043a4f..45e404aa6c 100644
                          }
                          
                          sliderView.frame = CGRect(origin: CGPoint(x: params.leftInset + 38.0, y: 8.0), size: CGSize(width: params.width - params.leftInset - params.rightInset - 38.0 * 2.0, height: 44.0))
+@@ -242,7 +250,7 @@ class ThemeSettingsBrightnessItemNode: ListViewItemNode {
+     @objc func sliderValueChanged() {
+         guard let sliderView = self.sliderView else {
+             return
+         }
+-        self.item?.updated(Int32(sliderView.value))
++        self.item?.updated(Int32(sliderView.value) + (self.item?.minimumValue ?? 0))
+     }
+ }
 diff --git a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift b/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
 index 6eeb1f6bee..e116cee231 100644
 --- a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
