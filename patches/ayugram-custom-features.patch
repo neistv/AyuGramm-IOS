@@ -2408,8 +2408,27 @@ index 00000000..102449e7
 +    }
 +
 +    private func search() {
++        let cleanedTitle = self.title
++            .replacingOccurrences(of: #"\s*[\(\[]\s*(?:feat\.?|ft\.?).*?[\)\]]"#, with: "", options: [.regularExpression, .caseInsensitive])
++            .trimmingCharacters(in: .whitespacesAndNewlines)
++        var queries: [String] = []
++        for query in [
++            [self.artist, cleanedTitle].compactMap { $0 }.joined(separator: " "),
++            cleanedTitle,
++            [self.artist, self.title].compactMap { $0 }.joined(separator: " ")
++        ] where !query.isEmpty && !queries.contains(query) {
++            queries.append(query)
++        }
++        self.search(queries: queries, index: 0)
++    }
++
++    private func search(queries: [String], index: Int) {
++        guard index < queries.count else {
++            self.finish(.notFound)
++            return
++        }
 +        var components = URLComponents(string: "https://lrclib.net/api/search")
-+        components?.queryItems = [URLQueryItem(name: "q", value: [self.artist, self.title].compactMap { $0 }.joined(separator: " "))]
++        components?.queryItems = [URLQueryItem(name: "q", value: queries[index])]
 +        guard let url = components?.url else {
 +            self.finish(.notFound)
 +            return
@@ -2420,6 +2439,10 @@ index 00000000..102449e7
 +                return
 +            }
 +            let records = json as? [[String: Any]] ?? []
++            if records.isEmpty {
++                self.search(queries: queries, index: index + 1)
++                return
++            }
 +            // Prefer synced lyrics whose length matches the track.
 +            let ranked = records.sorted(by: { lhs, rhs in
 +                let lhsSynced = lhs["syncedLyrics"] is String
