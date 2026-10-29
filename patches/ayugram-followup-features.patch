@@ -141,7 +141,7 @@ index a636043a4f..45e404aa6c 100644
          sliderView.disablesInteractiveTransitionGestureRecognizer = true
          if let item = self.item, let params = self.layoutParams {
              sliderView.value = CGFloat(item.value)
-@@ -213,6 +217,10 @@ class ThemeSettingsBrightnessItemNode: ListViewItemNode {
+@@ -213,15 +217,19 @@ class ThemeSettingsBrightnessItemNode: ListViewItemNode {
                      }
                      
                      if let sliderView = strongSelf.sliderView {
@@ -152,6 +152,12 @@ index a636043a4f..45e404aa6c 100644
                          if themeUpdated {
                              sliderView.backgroundColor = item.theme.list.itemBlocksBackgroundColor
                              sliderView.backColor = item.theme.list.itemSecondaryTextColor
+-                            sliderView.trackColor = item.theme.list.itemAccentColor.withAlphaComponent(0.45)
++                            sliderView.trackColor = item.theme.list.itemAccentColor
+                             sliderView.knobImage = PresentationResourcesItemList.knobImage(item.theme)
+                         }
+                         
+                         sliderView.frame = CGRect(origin: CGPoint(x: params.leftInset + 38.0, y: 8.0), size: CGSize(width: params.width - params.leftInset - params.rightInset - 38.0 * 2.0, height: 44.0))
 diff --git a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift b/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift
 index 6eeb1f6bee..e116cee231 100644
 --- a/submodules/TelegramCore/Sources/AyuGram/AyuInterfaceSettings.swift

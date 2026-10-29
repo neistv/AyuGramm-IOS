@@ -160,6 +160,7 @@ index 31f429b942..113dea1492 100644
 +                if self.context.account.network.ayuGhostMode.current.interface.supporterBadgesOnLeft {
 +                    verifiedIcon = .ayuDeveloper(fileId: documentId, text: resolvedText)
 +                } else {
++                    if case .premium = credibilityIcon { statusIcon = credibilityIcon }
 +                    credibilityIcon = .exteraCustomBadge(fileId: documentId, text: resolvedText)
 +                }
              }
